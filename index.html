@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>萌えっ娘もんすたぁ TOEIC ダンジョン</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Title Screen -->
+        <div id="title-screen" class="screen active">
+            <h1 class="game-title">萌えっ娘もんすたぁ<br>TOEIC ダンジョン</h1>
+            <div class="menu">
+                <button class="menu-btn pixel-btn" id="new-game-btn">はじめから</button>
+                <button class="menu-btn pixel-btn" id="continue-btn">つづきから</button>
+            </div>
+        </div>
+
+        <!-- Starter Selection Screen -->
+        <div id="starter-screen" class="screen">
+            <h2 class="screen-title">御三家を選んでください</h2>
+            <div class="starter-container">
+                <div class="starter-card" data-id="1">
+                    <canvas class="starter-sprite" width="128" height="128"></canvas>
+                    <div class="starter-info">
+                        <h3>フシギダネ</h3>
+                        <div class="type-badges">
+                            <span class="type-badge grass">くさ</span>
+                            <span class="type-badge poison">どく</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="starter-card" data-id="4">
+                    <canvas class="starter-sprite" width="128" height="128"></canvas>
+                    <div class="starter-info">
+                        <h3>ヒトカゲ</h3>
+                        <div class="type-badges">
+                            <span class="type-badge fire">ほのお</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="starter-card" data-id="7">
+                    <canvas class="starter-sprite" width="128" height="128"></canvas>
+                    <div class="starter-info">
+                        <h3>ゼニガメ</h3>
+                        <div class="type-badges">
+                            <span class="type-badge water">みず</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dungeon Screen -->
+        <div id="dungeon-screen" class="screen">
+            <div class="status-bar">
+                <div class="player-info">
+                    <span id="player-name">フシギダネ</span>
+                    <span class="level">Lv.<span id="player-level">5</span></span>
+                </div>
+                <div class="dungeon-info">
+                    <span id="floor-display">1F</span>
+                    <span class="badges">バッジ: <span id="badge-count">0</span>/8</span>
+                </div>
+            </div>
+            <canvas id="dungeon-canvas" width="640" height="480"></canvas>
+            <div class="controls">
+                <button class="control-btn pixel-btn" id="move-up">↑</button>
+                <div class="control-row">
+                    <button class="control-btn pixel-btn" id="move-left">←</button>
+                    <button class="control-btn pixel-btn" id="move-down">↓</button>
+                    <button class="control-btn pixel-btn" id="move-right">→</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Battle Screen -->
+        <div id="battle-screen" class="screen">
+            <div class="battle-container">
+                <div class="enemy-section">
+                    <div class="pokemon-display">
+                        <canvas id="enemy-sprite" width="128" height="128"></canvas>
+                        <div class="pokemon-stats">
+                            <div class="pokemon-header">
+                                <span id="enemy-name">ポッポ</span>
+                                <span class="level">Lv.<span id="enemy-level">3</span></span>
+                            </div>
+                            <div class="hp-bar-container">
+                                <div class="hp-label">HP</div>
+                                <div class="hp-bar">
+                                    <div class="hp-fill" id="enemy-hp-fill" style="width: 100%"></div>
+                                </div>
+                                <div class="hp-numbers">
+                                    <span id="enemy-hp">20</span>/<span id="enemy-max-hp">20</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="player-section">
+                    <div class="pokemon-display">
+                        <canvas id="player-sprite" width="128" height="128"></canvas>
+                        <div class="pokemon-stats">
+                            <div class="pokemon-header">
+                                <span id="battle-player-name">フシギダネ</span>
+                                <span class="level">Lv.<span id="battle-player-level">5</span></span>
+                            </div>
+                            <div class="hp-bar-container">
+                                <div class="hp-label">HP</div>
+                                <div class="hp-bar">
+                                    <div class="hp-fill" id="player-hp-fill" style="width: 100%"></div>
+                                </div>
+                                <div class="hp-numbers">
+                                    <span id="player-hp">25</span>/<span id="player-max-hp">25</span>
+                                </div>
+                            </div>
+                            <div class="exp-bar-container">
+                                <div class="exp-label">EXP</div>
+                                <div class="exp-bar">
+                                    <div class="exp-fill" id="player-exp-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="battle-ui">
+                    <div class="message-log" id="message-log">
+                        野生のポッポが現れた！
+                    </div>
+
+                    <div class="question-panel" id="question-panel">
+                        <div class="question-text" id="question-text">
+                            She has been ____ in Paris for 3 years.
+                        </div>
+                        <div class="choices" id="choices">
+                            <button class="choice-btn pixel-btn" data-index="0">
+                                <span class="choice-label">A</span>
+                                <span class="choice-text">living</span>
+                                <span class="move-info">たいあたり</span>
+                            </button>
+                            <button class="choice-btn pixel-btn" data-index="1">
+                                <span class="choice-label">B</span>
+                                <span class="choice-text">lived</span>
+                                <span class="move-info">ひっかく</span>
+                            </button>
+                            <button class="choice-btn pixel-btn" data-index="2">
+                                <span class="choice-label">C</span>
+                                <span class="choice-text">live</span>
+                                <span class="move-info">つるのムチ</span>
+                            </button>
+                            <button class="choice-btn pixel-btn" data-index="3">
+                                <span class="choice-label">D</span>
+                                <span class="choice-text">lives</span>
+                                <span class="move-info">はっぱカッター</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Victory Screen -->
+        <div id="victory-screen" class="screen">
+            <div class="result-container">
+                <h2 class="result-title victory">Victory!</h2>
+                <div class="result-stats">
+                    <p>倒したジムリーダー: <span id="defeated-gyms">0</span>/8</p>
+                    <p>獲得したバッジ: <span id="total-badges">0</span></p>
+                    <p>総バトル数: <span id="total-battles">0</span></p>
+                    <p>TOEIC正解率: <span id="accuracy">0</span>%</p>
+                </div>
+                <button class="pixel-btn" id="return-title-btn">タイトルへ戻る</button>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="screen">
+            <div class="result-container">
+                <h2 class="result-title defeat">Game Over</h2>
+                <div class="result-stats">
+                    <p>到達階層: <span id="reached-floor">1</span>F</p>
+                    <p>総バトル数: <span id="go-total-battles">0</span></p>
+                    <p>TOEIC正解率: <span id="go-accuracy">0</span>%</p>
+                </div>
+                <button class="pixel-btn" id="retry-btn">もう一度挑戦</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Sprite Sheet -->
+    <img id="sprite-sheet" src="poke.png" style="display: none;">
+
+    <!-- Scripts -->
+    <script src="sprite-loader.js"></script>
+    <script src="pokemon.js"></script>
+    <script src="toeic-questions.js"></script>
+    <script src="dungeon.js"></script>
+    <script src="battle.js"></script>
+    <script src="save-manager.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
