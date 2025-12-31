@@ -665,4 +665,72 @@ body {
         font-size: 0.9rem;
         padding: 12px 20px;
     }
+
+    /* ===== Battle Controls ===== */
+    .battle-controls {
+        padding: 10px;
+    }
+
+    .moves-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .move-btn {
+        display: flex;
+        flex-direction: column;
+        padding: 15px;
+        gap: 5px;
+        min-height: 80px;
+        justify-content: center;
+    }
+
+    .move-name {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .move-type {
+        font-size: 0.8rem;
+        color: #666;
+    }
+
+    .action-row {
+        display: flex;
+        gap: 15px;
+    }
+
+    .action-btn {
+        flex: 1;
+        padding: 12px;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .item-btn {
+        background: linear-gradient(180deg, #fff3e0 0%, #ffe0b2 100%);
+    }
+
+    .run-btn {
+        background: linear-gradient(180deg, #eceff1 0%, #cfd8dc 100%);
+        color: #546e7a;
+    }
+
+    @media (max-width: 480px) {
+        .moves-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .move-btn {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 60px;
+        }
+    }
 }

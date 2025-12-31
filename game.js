@@ -5,6 +5,7 @@ class Game {
         this.currentScreen = 'title';
         this.playerPokemon = null;
         this.currentFloor = 1;
+        this.party = [];
         this.dungeon = null;
         this.dungeonSeed = Date.now();
         this.battleManager = new BattleManager();
@@ -15,7 +16,9 @@ class Game {
             totalBattles: 0,
             correctAnswers: 0,
             totalQuestions: 0,
-            badges: 0
+            badges: 0,
+            potions: 1,
+            balls: 5
         };
 
         // Make game globally accessible
@@ -66,6 +69,11 @@ class Game {
         document.getElementById('move-down').addEventListener('click', () => this.movePlayer(0, 1));
         document.getElementById('move-left').addEventListener('click', () => this.movePlayer(-1, 0));
         document.getElementById('move-right').addEventListener('click', () => this.movePlayer(1, 0));
+        const potionBtn = document.getElementById('dungeon-potion-btn');
+        if (potionBtn) potionBtn.addEventListener('click', () => this.usePotion());
+
+        const partyBtn = document.getElementById('dungeon-party-btn');
+        if (partyBtn) partyBtn.addEventListener('click', () => this.switchLeader());
 
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
@@ -122,6 +130,7 @@ class Game {
 
     selectStarter(pokemonId) {
         this.playerPokemon = new Pokemon(pokemonId, 5);
+        this.party = [this.playerPokemon];
         this.currentFloor = 1;
         this.dungeonSeed = Date.now();
         this.startDungeon();
@@ -140,6 +149,54 @@ class Game {
         document.getElementById('player-level').textContent = this.playerPokemon.level;
         document.getElementById('floor-display').textContent = `${this.currentFloor}F`;
         document.getElementById('badge-count').textContent = this.stats.badges;
+        document.getElementById('dungeon-potion-count').textContent = this.stats.potions;
+        const ballCount = document.getElementById('dungeon-ball-count');
+        if (ballCount) ballCount.textContent = this.stats.balls;
+
+        const partyCount = document.getElementById('party-count');
+        if (partyCount) partyCount.textContent = this.party.length;
+    }
+
+    switchLeader() {
+        if (this.party.length <= 1) {
+            alert("交代するポケモンがいません！");
+            return;
+        }
+
+        // Rotate party
+        const first = this.party.shift();
+        this.party.push(first);
+        this.playerPokemon = this.party[0];
+
+        alert(`${this.playerPokemon.name}に交代した！`);
+        this.updateDungeonUI();
+        // Redraw dungeon to update sprite
+        if (this.dungeon) this.dungeon.draw(document.getElementById('dungeon-canvas').getContext('2d'), 640, 480);
+    }
+
+    addToParty(pokemon) {
+        if (this.party.length < 6) {
+            this.party.push(pokemon);
+            alert(`${pokemon.name}が仲間になった！`);
+        } else {
+            alert(`${pokemon.name}を捕まえたが、手持ちがいっぱいなので逃がした... (PC機能未実装)`);
+        }
+        this.updateDungeonUI();
+    }
+
+    usePotion() {
+        if (this.stats.potions > 0) {
+            if (this.playerPokemon.hp < this.playerPokemon.maxHp) {
+                this.stats.potions--;
+                this.playerPokemon.heal(20);
+                this.updateDungeonUI();
+                alert("キズぐすりを つかった！ HPが20かいふくした！");
+            } else {
+                alert("HPは まんたんだ！");
+            }
+        } else {
+            alert("キズぐすりを もっていない！");
+        }
     }
 
     renderDungeon() {
@@ -156,9 +213,31 @@ class Game {
             this.startEncounter();
         } else if (result === 'stairs') {
             this.nextFloor();
+        } else if (result && result.type === 'item') {
+            this.pickupItem(result.item);
         }
 
         this.autoSave();
+    }
+
+    pickupItem(item) {
+        if (item.type === 'potion') {
+            if (this.stats.potions < 3) {
+                this.stats.potions++;
+                alert("キズぐすりを拾った！");
+                this.updateDungeonUI();
+            } else {
+                alert("持ち物がいっぱいで拾えない！");
+            }
+        } else if (item.type === 'ball') {
+            if (this.stats.balls < 5) {
+                this.stats.balls++;
+                alert("モンスターボールを拾った！");
+                this.updateDungeonUI();
+            } else {
+                alert("持ち物がいっぱいで拾えない！");
+            }
+        }
     }
 
     startEncounter() {
@@ -243,12 +322,15 @@ class Game {
 
     returnToTitle() {
         this.currentFloor = 1;
+        this.party = [];
         this.playerPokemon = null;
         this.stats = {
             totalBattles: 0,
             correctAnswers: 0,
             totalQuestions: 0,
-            badges: 0
+            badges: 0,
+            potions: 1,
+            balls: 5
         };
 
         this.showScreen('title-screen');

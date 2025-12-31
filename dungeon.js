@@ -1,212 +1,319 @@
 // Dungeon Generation System
 
 class Dungeon {
-    constructor(floor, seed = Date.now()) {
+    constructor(floor, seed) {
         this.floor = floor;
         this.seed = seed;
-        this.width = 40;
-        this.height = 30;
-        this.tileSize = 16;
-        this.grid = [];
+        this.width = 30; // 30x20
+        this.height = 20;
+        this.map = [];
         this.rooms = [];
-        this.playerPos = { x: 0, y: 0 };
-        this.stairs = { x: 0, y: 0 };
-        this.stepCount = 0;
+        this.items = []; // Potions
+        this.enemies = []; // Visible enemies
+        this.playerX = 1;
+        this.playerY = 1;
+        this.stairsX = 0;
+        this.stairsY = 0;
+        this.turnCount = 0; // Track turns for enemy movement
 
         this.generate();
     }
 
     // Simple seeded random number generator
-    random() {
+    seededRandom() {
         this.seed = (this.seed * 9301 + 49297) % 233280;
         return this.seed / 233280;
     }
 
     generate() {
-        // Initialize grid with walls
+        // Initialize map with walls
         for (let y = 0; y < this.height; y++) {
-            this.grid[y] = [];
+            this.map[y] = [];
             for (let x = 0; x < this.width; x++) {
-                this.grid[y][x] = 1; // 1 = wall, 0 = floor
+                this.map[y][x] = 1; // 1 = wall, 0 = floor
             }
         }
 
-        // Generate rooms
-        const numRooms = 6 + Math.floor(this.random() * 4);
+        this.placeRooms();
+        this.connectRooms();
+        this.spawnItems();
+        this.spawnEnemies();
+    }
 
-        for (let i = 0; i < numRooms; i++) {
-            const w = 4 + Math.floor(this.random() * 6);
-            const h = 4 + Math.floor(this.random() * 6);
-            const x = Math.floor(this.random() * (this.width - w - 2)) + 1;
-            const y = Math.floor(this.random() * (this.height - h - 2)) + 1;
+    placeRooms() {
+        const minRooms = 5;
+        const maxRooms = 10;
+        const roomCount = Math.floor(this.seededRandom() * (maxRooms - minRooms + 1)) + minRooms;
 
-            const room = { x, y, w, h };
+        for (let i = 0; i < roomCount; i++) {
+            const w = Math.floor(this.seededRandom() * 6) + 4; // 4-9
+            const h = Math.floor(this.seededRandom() * 6) + 4;
+            const x = Math.floor(this.seededRandom() * (this.width - w - 2)) + 1;
+            const y = Math.floor(this.seededRandom() * (this.height - h - 2)) + 1;
 
-            // Check if room overlaps with existing rooms
-            let overlaps = false;
-            for (const other of this.rooms) {
-                if (this.roomsOverlap(room, other)) {
-                    overlaps = true;
+            const newRoom = { x, y, w, h };
+
+            // Check overlap with existing rooms (with a 1-tile buffer)
+            let overlap = false;
+            for (const room of this.rooms) {
+                if (newRoom.x < room.x + room.w + 1 && newRoom.x + newRoom.w + 1 > room.x &&
+                    newRoom.y < room.y + room.h + 1 && newRoom.y + newRoom.h + 1 > room.y) {
+                    overlap = true;
                     break;
                 }
             }
 
-            if (!overlaps) {
-                this.carveRoom(room);
-                this.rooms.push(room);
+            if (!overlap) {
+                this.createRoom(newRoom);
+                this.rooms.push(newRoom);
+
+                // Place player in the center of the first room
+                if (this.rooms.length === 1) {
+                    this.playerX = Math.floor(newRoom.x + newRoom.w / 2);
+                    this.playerY = Math.floor(newRoom.y + newRoom.h / 2);
+                }
             }
         }
 
-        // Connect rooms with corridors
-        for (let i = 0; i < this.rooms.length - 1; i++) {
-            this.connectRooms(this.rooms[i], this.rooms[i + 1]);
-        }
-
-        // Place player in first room
-        const firstRoom = this.rooms[0];
-        this.playerPos = {
-            x: firstRoom.x + Math.floor(firstRoom.w / 2),
-            y: firstRoom.y + Math.floor(firstRoom.h / 2)
-        };
-
-        // Place stairs in last room
+        // Place stairs in the center of the last room
         const lastRoom = this.rooms[this.rooms.length - 1];
-        this.stairs = {
-            x: lastRoom.x + Math.floor(lastRoom.w / 2),
-            y: lastRoom.y + Math.floor(lastRoom.h / 2)
-        };
+        this.stairsX = Math.floor(lastRoom.x + lastRoom.w / 2);
+        this.stairsY = Math.floor(lastRoom.y + lastRoom.h / 2);
     }
 
-    roomsOverlap(room1, room2) {
-        return room1.x < room2.x + room2.w + 1 &&
-            room1.x + room1.w + 1 > room2.x &&
-            room1.y < room2.y + room2.h + 1 &&
-            room1.y + room1.h + 1 > room2.y;
-    }
-
-    carveRoom(room) {
+    createRoom(room) {
         for (let y = room.y; y < room.y + room.h; y++) {
             for (let x = room.x; x < room.x + room.w; x++) {
-                this.grid[y][x] = 0;
+                this.map[y][x] = 0;
             }
         }
     }
 
-    connectRooms(room1, room2) {
-        const x1 = room1.x + Math.floor(room1.w / 2);
-        const y1 = room1.y + Math.floor(room1.h / 2);
-        const x2 = room2.x + Math.floor(room2.w / 2);
-        const y2 = room2.y + Math.floor(room2.h / 2);
+    connectRooms() {
+        for (let i = 0; i < this.rooms.length - 1; i++) {
+            const roomA = this.rooms[i];
+            const roomB = this.rooms[i + 1];
 
-        // Random choice: horizontal then vertical, or vice versa
-        if (this.random() < 0.5) {
-            this.carveCorridor(x1, y1, x2, y1); // Horizontal
-            this.carveCorridor(x2, y1, x2, y2); // Vertical
-        } else {
-            this.carveCorridor(x1, y1, x1, y2); // Vertical
-            this.carveCorridor(x1, y2, x2, y2); // Horizontal
+            const x1 = Math.floor(roomA.x + roomA.w / 2);
+            const y1 = Math.floor(roomA.y + roomA.h / 2);
+            const x2 = Math.floor(roomB.x + roomB.w / 2);
+            const y2 = Math.floor(roomB.y + roomB.h / 2);
+
+            // Random choice: horizontal then vertical, or vice versa
+            if (this.seededRandom() > 0.5) {
+                this.createTunnel(x1, x2, y1, true); // Horizontal
+                this.createTunnel(y1, y2, x2, false); // Vertical
+            } else {
+                this.createTunnel(y1, y2, x1, false); // Vertical
+                this.createTunnel(x1, x2, y2, true); // Horizontal
+            }
         }
     }
 
-    carveCorridor(x1, y1, x2, y2) {
-        const minX = Math.min(x1, x2);
-        const maxX = Math.max(x1, x2);
-        const minY = Math.min(y1, y2);
-        const maxY = Math.max(y1, y2);
+    createTunnel(start, end, fixed, horizontal) {
+        const min = Math.min(start, end);
+        const max = Math.max(start, end);
 
-        for (let y = minY; y <= maxY; y++) {
-            for (let x = minX; x <= maxX; x++) {
-                if (y >= 0 && y < this.height && x >= 0 && x < this.width) {
-                    this.grid[y][x] = 0;
+        for (let i = min; i <= max; i++) {
+            if (horizontal) {
+                if (fixed >= 0 && fixed < this.height && i >= 0 && i < this.width) {
+                    this.map[fixed][i] = 0;
+                }
+            } else {
+                if (i >= 0 && i < this.height && fixed >= 0 && fixed < this.width) {
+                    this.map[i][fixed] = 0;
                 }
             }
         }
     }
 
-    canMove(x, y) {
-        if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
-            return false;
+    spawnItems() {
+        const itemCount = 1 + Math.floor(this.seededRandom() * 2); // 1-2 items
+        for (let i = 0; i < itemCount; i++) {
+            const room = this.rooms[Math.floor(this.seededRandom() * this.rooms.length)];
+            const x = Math.floor(room.x + 1 + this.seededRandom() * (room.w - 2));
+            const y = Math.floor(room.y + 1 + this.seededRandom() * (room.h - 2));
+
+            // Avoid overlap with player, stairs, and other items
+            if ((x === this.playerX && y === this.playerY) ||
+                (x === this.stairsX && y === this.stairsY) ||
+                this.items.some(item => item.x === x && item.y === y)) {
+                i--; // Retry placing this item
+                continue;
+            }
+
+            const type = this.seededRandom() > 0.5 ? 'potion' : 'ball';
+            this.items.push({ x, y, type: type });
         }
-        return this.grid[y][x] === 0;
+    }
+
+    spawnEnemies() {
+        const enemyCount = 3 + Math.floor(this.floor / 3); // More enemies deeper
+        const maxAttempts = 50; // Prevent infinite loops if map is too small/crowded
+
+        for (let i = 0; i < enemyCount; i++) {
+            let placed = false;
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                const room = this.rooms[Math.floor(this.seededRandom() * this.rooms.length)];
+                const x = Math.floor(room.x + 1 + this.seededRandom() * (room.w - 2));
+                const y = Math.floor(room.y + 1 + this.seededRandom() * (room.h - 2));
+
+                // Ensure it's a floor tile
+                if (this.map[y][x] === 1) continue;
+
+                // Avoid overlap with player, stairs, items, and other enemies
+                if ((x === this.playerX && y === this.playerY) ||
+                    (x === this.stairsX && y === this.stairsY) ||
+                    this.items.some(item => item.x === x && item.y === y) ||
+                    this.enemies.some(enemy => enemy.x === x && enemy.y === y)) {
+                    continue;
+                }
+
+                // Keep some distance from player initially
+                if (Math.abs(x - this.playerX) + Math.abs(y - this.playerY) < 5) {
+                    continue;
+                }
+
+                this.enemies.push({ x, y, id: getEnemyForFloor(this.floor) }); // Store ID if needed? Or just generic.
+                placed = true;
+                break;
+            }
+            if (!placed) {
+                // console.warn("Could not place all enemies.");
+                break; // Stop trying if placement is too difficult
+            }
+        }
     }
 
     movePlayer(dx, dy) {
-        const newX = this.playerPos.x + dx;
-        const newY = this.playerPos.y + dy;
+        const newX = this.playerX + dx;
+        const newY = this.playerY + dy;
 
-        if (this.canMove(newX, newY)) {
-            this.playerPos.x = newX;
-            this.playerPos.y = newY;
-            this.stepCount++;
+        if (newX < 0 || newX >= this.width || newY < 0 || newY >= this.height) return null;
+        if (this.map[newY][newX] === 1) return null; // Wall
 
-            // Check if reached stairs
-            if (this.playerPos.x === this.stairs.x && this.playerPos.y === this.stairs.y) {
-                return 'stairs';
-            }
-
-            // Random encounter check (15% chance per step)
-            if (this.random() < 0.15) {
-                return 'encounter';
-            }
-
-            return 'moved';
+        // Check Enemy Collision
+        const enemyIndex = this.enemies.findIndex(e => e.x === newX && e.y === newY);
+        if (enemyIndex !== -1) {
+            this.enemies.splice(enemyIndex, 1);
+            return 'encounter';
         }
 
-        return 'blocked';
+        this.playerX = newX;
+        this.playerY = newY;
+        this.turnCount++;
+
+        // Stairs
+        if (this.playerX === this.stairsX && this.playerY === this.stairsY) {
+            return 'stairs';
+        }
+
+        // Items
+        const itemIndex = this.items.findIndex(i => i.x === this.playerX && i.y === this.playerY);
+        if (itemIndex !== -1) {
+            const item = this.items[itemIndex];
+            this.items.splice(itemIndex, 1);
+            return { type: 'item', item: item };
+        }
+
+        // Move Enemies
+        const enemyHit = this.moveEnemies();
+        if (enemyHit) return 'encounter';
+
+        return 'moved';
     }
 
-    draw(ctx, canvasWidth, canvasHeight) {
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    moveEnemies() {
+        if (this.turnCount % 2 !== 0) return null;
 
-        // Calculate camera offset to center on player
-        const offsetX = Math.floor(canvasWidth / 2 - this.playerPos.x * this.tileSize);
-        const offsetY = Math.floor(canvasHeight / 2 - this.playerPos.y * this.tileSize);
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const e = this.enemies[i];
 
-        // Draw tiles
+            const dx = Math.sign(this.playerX - e.x);
+            const dy = Math.sign(this.playerY - e.y);
+
+            let moved = false;
+
+            // Try major axis
+            if (Math.abs(this.playerX - e.x) >= Math.abs(this.playerY - e.y)) {
+                if (dx !== 0 && this.map[e.y][e.x + dx] !== 1) {
+                    e.x += dx;
+                    moved = true;
+                } else if (dy !== 0 && this.map[e.y + dy][e.x] !== 1) {
+                    e.y += dy;
+                    moved = true;
+                }
+            } else {
+                if (dy !== 0 && this.map[e.y + dy][e.x] !== 1) {
+                    e.y += dy;
+                    moved = true;
+                } else if (dx !== 0 && this.map[e.y][e.x + dx] !== 1) {
+                    e.x += dx;
+                    moved = true;
+                }
+            }
+
+            if (e.x === this.playerX && e.y === this.playerY) {
+                this.enemies.splice(i, 1);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    draw(ctx, width, height) {
+        const tileW = width / this.width;
+        const tileH = height / this.height;
+
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, width, height);
+
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
-                const screenX = x * this.tileSize + offsetX;
-                const screenY = y * this.tileSize + offsetY;
+                const posX = x * tileW;
+                const posY = y * tileH;
 
-                // Only draw if on screen
-                if (screenX >= -this.tileSize && screenX < canvasWidth &&
-                    screenY >= -this.tileSize && screenY < canvasHeight) {
-
-                    if (this.grid[y][x] === 0) {
-                        // Floor
-                        ctx.fillStyle = '#555555';
-                        ctx.fillRect(screenX, screenY, this.tileSize, this.tileSize);
-                    } else {
-                        // Wall
-                        ctx.fillStyle = '#222222';
-                        ctx.fillRect(screenX, screenY, this.tileSize, this.tileSize);
-                        ctx.strokeStyle = '#111111';
-                        ctx.strokeRect(screenX, screenY, this.tileSize, this.tileSize);
-                    }
+                if (this.map[y][x] === 1) {
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(posX, posY, tileW, tileH);
+                } else {
+                    ctx.fillStyle = '#eee';
+                    ctx.fillRect(posX, posY, tileW, tileH);
                 }
             }
         }
 
-        // Draw stairs
-        const stairsX = this.stairs.x * this.tileSize + offsetX;
-        const stairsY = this.stairs.y * this.tileSize + offsetY;
-        ctx.fillStyle = '#ffeb3b';
-        ctx.fillRect(stairsX + 2, stairsY + 2, this.tileSize - 4, this.tileSize - 4);
-        ctx.strokeStyle = '#fbc02d';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(stairsX + 2, stairsY + 2, this.tileSize - 4, this.tileSize - 4);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const fontSize = Math.floor(tileW * 0.8);
+        ctx.font = `${fontSize}px sans-serif`;
 
-        // Draw player
-        const playerX = this.playerPos.x * this.tileSize + offsetX;
-        const playerY = this.playerPos.y * this.tileSize + offsetY;
-        ctx.fillStyle = '#4caf50';
-        ctx.beginPath();
-        ctx.arc(playerX + this.tileSize / 2, playerY + this.tileSize / 2, this.tileSize / 3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#2e7d32';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        // Stairs
+        ctx.fillText('🪜', this.stairsX * tileW + tileW / 2, this.stairsY * tileH + tileH / 2);
+
+        // Items
+        this.items.forEach(item => {
+            const icon = item.type === 'potion' ? '💊' : '🔴';
+            ctx.fillText(icon, item.x * tileW + tileW / 2, item.y * tileH + tileH / 2);
+        });
+
+        // Enemies
+        this.enemies.forEach(enemy => {
+            let icon = '👾';
+            if (typeof POKEMON_DATA !== 'undefined' && POKEMON_DATA[enemy.id] && POKEMON_DATA[enemy.id].emoji) {
+                icon = POKEMON_DATA[enemy.id].emoji;
+            }
+            ctx.fillText(icon, enemy.x * tileW + tileW / 2, enemy.y * tileH + tileH / 2);
+        });
+
+        // Player
+        let playerIcon = '🧙‍♂️';
+        if (typeof window !== 'undefined' && window.game && window.game.playerPokemon && window.game.playerPokemon.id) {
+            if (typeof POKEMON_DATA !== 'undefined' && POKEMON_DATA[window.game.playerPokemon.id]) {
+                playerIcon = POKEMON_DATA[window.game.playerPokemon.id].emoji || '🧙‍♂️';
+            }
+        }
+        ctx.fillText(playerIcon, this.playerX * tileW + tileW / 2, this.playerY * tileH + tileH / 2);
     }
 }
 
