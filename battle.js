@@ -214,6 +214,13 @@ class BattleManager {
             }
         });
 
+        // Immediate feedback
+        if (choice.correct) {
+            this.showMessage("正解！");
+        } else {
+            this.showMessage("不正解！");
+        }
+
         // Execute turn after a delay
         setTimeout(() => {
             if (choice.correct) {

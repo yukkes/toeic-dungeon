@@ -1,10 +1,10 @@
 // Dungeon Generation System
 
 const THEMES = {
-    grass: { floor: '#e8f5e9', wall: '#2e7d32', battleBg: 'linear-gradient(to bottom, #87CEEB 0%, #E0F7FA 50%, #66bb6a 50%, #2e7d32 100%)' },
-    cave: { floor: '#616161', wall: '#212121', battleBg: 'linear-gradient(to bottom, #424242 0%, #212121 100%)' },
-    volcano: { floor: '#5d4037', wall: '#b71c1c', battleBg: 'linear-gradient(to bottom, #d84315 0%, #3e2723 100%)' },
-    sea: { floor: '#e3f2fd', wall: '#0277bd', battleBg: 'linear-gradient(to bottom, #81d4fa 0%, #0277bd 50%, #01579b 100%)' }
+    grass: { floor: '#e8f5e9', wall: '#2e7d32', battleBg: 'linear-gradient(to bottom, #87CEEB 0%, #E0F7FA 50%, #66bb6a 50%, #2e7d32 100%)', floorTile: [0, 0], wallTile: [0, 1] },
+    cave: { floor: '#616161', wall: '#212121', battleBg: 'linear-gradient(to bottom, #424242 0%, #212121 100%)', floorTile: [1, 0], wallTile: [1, 1] },
+    volcano: { floor: '#5d4037', wall: '#b71c1c', battleBg: 'linear-gradient(to bottom, #d84315 0%, #3e2723 100%)', floorTile: [2, 0], wallTile: [2, 1] },
+    sea: { floor: '#e3f2fd', wall: '#0277bd', battleBg: 'linear-gradient(to bottom, #81d4fa 0%, #0277bd 50%, #01579b 100%)', floorTile: [6, 0], wallTile: [6, 1] }
 };
 
 function getTheme(floor) {
@@ -29,6 +29,13 @@ class Dungeon {
         this.stairsX = 0;
         this.stairsY = 0;
         this.turnCount = 0; // Track turns for enemy movement
+
+        this.tileset = new Image();
+        this.tileset.src = 'map_tiles.png';
+        this.tileset.onload = () => {
+            const canvas = document.getElementById('dungeon-canvas');
+            if (canvas) this.draw(canvas.getContext('2d'), canvas.width, canvas.height);
+        };
 
         this.generate();
     }
@@ -278,26 +285,42 @@ class Dungeon {
     draw(ctx, width, height) {
         const tileW = width / this.width;
         const tileH = height / this.height;
+        // Fix gaps
+        const drawTileW = Math.ceil(tileW);
+        const drawTileH = Math.ceil(tileH);
 
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, width, height);
 
         const theme = getTheme(this.floor);
-        // Fix gaps by ceil width and overlap
-        const drawTileW = Math.ceil(tileW) + 1;
-        const drawTileH = Math.ceil(tileH) + 1;
+        const useTiles = this.tileset && this.tileset.complete && this.tileset.naturalWidth !== 0;
+        const srcS = useTiles ? this.tileset.width / 8 : 32;
 
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
                 const posX = Math.floor(x * tileW);
                 const posY = Math.floor(y * tileH);
 
-                if (this.map[y][x] === 1) {
-                    ctx.fillStyle = theme.wall;
-                    ctx.fillRect(posX, posY, drawTileW, drawTileH);
-                } else {
-                    ctx.fillStyle = theme.floor;
-                    ctx.fillRect(posX, posY, drawTileW, drawTileH);
+                if (this.map[y][x] === 1) { // Wall
+                    if (useTiles) {
+                        ctx.drawImage(this.tileset,
+                            theme.wallTile[0] * srcS, theme.wallTile[1] * srcS, srcS, srcS,
+                            posX, posY, drawTileW, drawTileH
+                        );
+                    } else {
+                        ctx.fillStyle = theme.wall;
+                        ctx.fillRect(posX, posY, drawTileW, drawTileH);
+                    }
+                } else { // Floor
+                    if (useTiles) {
+                        ctx.drawImage(this.tileset,
+                            theme.floorTile[0] * srcS, theme.floorTile[1] * srcS, srcS, srcS,
+                            posX, posY, drawTileW, drawTileH
+                        );
+                    } else {
+                        ctx.fillStyle = theme.floor;
+                        ctx.fillRect(posX, posY, drawTileW, drawTileH);
+                    }
                 }
             }
         }
@@ -307,13 +330,30 @@ class Dungeon {
         const fontSize = Math.floor(tileW * 0.8);
         ctx.font = `${fontSize}px sans-serif`;
 
-        // Stairs
-        ctx.fillText('🪜', this.stairsX * tileW + tileW / 2, this.stairsY * tileH + tileH / 2);
+        // Stairs (Down: 0, 3)
+        if (useTiles) {
+            ctx.drawImage(this.tileset,
+                0 * srcS, 3 * srcS, srcS, srcS,
+                Math.floor(this.stairsX * tileW), Math.floor(this.stairsY * tileH), drawTileW, drawTileH
+            );
+        } else {
+            ctx.fillText('🪜', this.stairsX * tileW + tileW / 2, this.stairsY * tileH + tileH / 2);
+        }
 
         // Items
         this.items.forEach(item => {
-            const icon = item.type === 'potion' ? '💊' : '🔴';
-            ctx.fillText(icon, item.x * tileW + tileW / 2, item.y * tileH + tileH / 2);
+            if (useTiles) {
+                // Potion: 0, 2; Ball: 1, 2
+                const tileX = item.type === 'potion' ? 0 : 1;
+                const tileY = 2;
+                ctx.drawImage(this.tileset,
+                    tileX * srcS, tileY * srcS, srcS, srcS,
+                    Math.floor(item.x * tileW), Math.floor(item.y * tileH), drawTileW, drawTileH
+                );
+            } else {
+                const icon = item.type === 'potion' ? '💊' : '🔴';
+                ctx.fillText(icon, item.x * tileW + tileW / 2, item.y * tileH + tileH / 2);
+            }
         });
 
         // Enemies
