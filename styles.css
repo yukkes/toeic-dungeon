@@ -965,7 +965,7 @@ body {
         .battle-container {
             display: block;
             /* Restore block for absolute positioning context */
-            min-height: 100vh;
+            min-height: calc(100vh - 40px);
             width: 100%;
             overflow: hidden;
             padding: 0;
