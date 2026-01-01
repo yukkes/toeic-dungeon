@@ -40,7 +40,30 @@ class Dungeon {
             this.render();
         };
 
+        this.resizeCanvas();
+        window.addEventListener('resize', () => {
+            this.resizeCanvas();
+            this.render();
+        });
+
         this.generate();
+    }
+
+    resizeCanvas() {
+        const canvas = document.getElementById('dungeon-canvas');
+        if (!canvas) return;
+
+        // Check for mobile portrait
+        if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
+            // Mobile Portrait: Vertical Map
+            // Use slightly higher resolution for sharpness, CSS will scale it down
+            canvas.width = 480;
+            canvas.height = 640;
+        } else {
+            // Desktop / Landscape: Horizontal Map
+            canvas.width = 600;
+            canvas.height = 400;
+        }
     }
 
     generate() {

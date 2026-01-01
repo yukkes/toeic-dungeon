@@ -201,7 +201,7 @@ class BattleManager {
 
         if (choice.correct) {
             btnElement.classList.add('correct');
-            this.showMessage("正解！ 最大パワーで攻撃！");
+            this.showMessage("正解！最も威力の高い技で攻撃！");
             this.setupAutoMove(true);
         } else {
             btnElement.classList.add('wrong');
