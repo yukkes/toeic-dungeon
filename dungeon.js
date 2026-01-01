@@ -303,8 +303,10 @@ class Dungeon {
 
                 if (this.map[y][x] === 1) { // Wall
                     if (useTiles) {
+                        // Apply inset to avoid tile border artifacts
+                        const inset = 2; // Crop 2px from each side
                         ctx.drawImage(this.tileset,
-                            theme.wallTile[0] * srcS, theme.wallTile[1] * srcS, srcS, srcS,
+                            theme.wallTile[0] * srcS + inset, theme.wallTile[1] * srcS + inset, srcS - inset * 2, srcS - inset * 2,
                             posX, posY, drawTileW, drawTileH
                         );
                     } else {
@@ -313,8 +315,9 @@ class Dungeon {
                     }
                 } else { // Floor
                     if (useTiles) {
+                        const inset = 2;
                         ctx.drawImage(this.tileset,
-                            theme.floorTile[0] * srcS, theme.floorTile[1] * srcS, srcS, srcS,
+                            theme.floorTile[0] * srcS + inset, theme.floorTile[1] * srcS + inset, srcS - inset * 2, srcS - inset * 2,
                             posX, posY, drawTileW, drawTileH
                         );
                     } else {

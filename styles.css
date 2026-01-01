@@ -475,6 +475,16 @@ body {
     flex: 1;
     color: var(--text-light);
     min-width: 250px;
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5),
+        -1px -1px 0 rgba(0, 0, 0, 0.5),
+        1px -1px 0 rgba(0, 0, 0, 0.5),
+        -1px 1px 0 rgba(0, 0, 0, 0.5),
+        1px 1px 0 rgba(0, 0, 0, 0.5);
+    font-weight: bold;
+}
+
+.pokemon-stats .level {
+    text-shadow: none;
 }
 
 .pokemon-header {
@@ -812,7 +822,9 @@ body {
             min-height: 60px;
         }
     }
-}/* ===== Mobile Optimization for Dungeon UI ===== */
+}
+
+/* ===== Mobile Optimization for Dungeon UI ===== */
 @media (max-width: 600px) {
     .status-bar {
         flex-direction: column;
@@ -867,16 +879,223 @@ body {
     .item-btn,
     .ball-status-btn {
         font-size: 0.8rem;
-        padding: 8px 12px;
-        margin: 2px;
-        min-width: 40px;
     }
 
-    .game-title {
-        font-size: 1.5rem;
-    }
+    /* ===== Mobile Optimization for Dungeon UI ===== */
+    @media (max-width: 600px) {
+        .status-bar {
+            flex-direction: column;
+            gap: 10px;
+            padding: 5px;
+        }
 
-    .screen {
-        padding: 10px;
+        .player-info {
+            width: 100%;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #dungeon-player-sprite {
+            width: 64px;
+            height: 64px;
+        }
+
+        #player-name {
+            font-size: 1rem;
+        }
+
+        #dungeon-ui {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .dungeon-stats-row {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 0;
+        }
+
+        .stat-separator {
+            margin-left: 0;
+        }
+
+        .dungeon-controls-row {
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .party-btn,
+        .item-btn,
+        .ball-status-btn {
+            font-size: 0.8rem;
+            padding: 8px 12px;
+            margin: 2px;
+            min-width: 40px;
+        }
+
+        .game-title {
+            font-size: 1.5rem;
+        }
+
+        .screen {
+            padding: 10px;
+        }
+
+        body {
+            padding: 0;
+            align-items: flex-start;
+            /* Fit to top */
+        }
+
+        #game-container {
+            border-radius: 0;
+            box-shadow: none;
+            max-width: none;
+        }
+
+        /* ===== Mobile Optimization for Battle Screen ===== */
+        .battle-container {
+            display: block;
+            /* Restore block for absolute positioning context */
+            min-height: 100vh;
+            width: 100%;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        .enemy-section {
+            position: absolute;
+            /* Absolute positioning for strict diagonal placement */
+            top: 10px;
+            right: 10px;
+            align-self: auto;
+            margin: 0;
+            width: auto;
+            max-width: 260px;
+            z-index: 1;
+        }
+
+        .player-section {
+            position: absolute;
+            /* Absolute positioning for strict diagonal placement */
+            bottom: 50vh;
+            /* Position above the UI panel (ui is 50vh, +2vh gap) */
+            left: 10px;
+            align-self: auto;
+            margin: 0;
+            width: auto;
+            max-width: 260px;
+            transform: none;
+            z-index: 2;
+        }
+
+        .pokemon-display {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 10px;
+            gap: 8px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #enemy-sprite,
+        #player-sprite {
+            width: 70px;
+            height: 70px;
+            border-width: 1px;
+        }
+
+        .pokemon-stats {
+            min-width: 0;
+        }
+
+        .pokemon-header {
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        .hp-bar,
+        .exp-bar {
+            height: 14px;
+        }
+
+        .hp-label,
+        .exp-label {
+            font-size: 0.75rem;
+            min-width: 25px;
+        }
+
+        .hp-numbers {
+            font-size: 0.8rem;
+        }
+
+        .battle-ui {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: 50vh;
+            /* Increased height */
+            padding: 10px;
+            border-radius: 15px 15px 0 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+            /* Ensure background is opaque */
+            background: rgba(255, 255, 255, 0.98);
+        }
+
+        .question-panel {
+            min-height: 0;
+            /* Allow shrinking */
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .question-text {
+            font-size: 0.95rem;
+            padding: 8px;
+            margin-bottom: 5px;
+            flex-shrink: 0;
+            max-height: 30%;
+            /* Prevent taking too much space */
+            overflow-y: auto;
+        }
+
+        .choices {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            /* 2 columns for better visibility */
+            gap: 8px;
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-bottom: 5px;
+            min-height: min-content;
+        }
+
+        .choice-btn {
+            padding: 6px 10px;
+            /* Reduced padding (8px -> 6px) */
+            min-height: 40px;
+            /* Reduced min-height (44px -> 40px) */
+        }
+
+        .choice-label,
+        .choice-text {
+            font-size: 0.9rem;
+        }
     }
 }
