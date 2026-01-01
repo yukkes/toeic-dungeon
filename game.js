@@ -17,7 +17,7 @@ class Game {
             correctAnswers: 0,
             totalQuestions: 0,
             badges: 0,
-            potions: 1,
+            potions: 0,
             balls: 0
         };
 
@@ -242,7 +242,7 @@ class Game {
                 this.showDungeonMessage("持ち物がいっぱいで拾えない！");
             }
         } else if (item.type === 'ball') {
-            if (this.stats.balls < 5) {
+            if (this.stats.balls < 6) {
                 this.stats.balls++;
                 this.showDungeonMessage("モンスターボールを拾った！");
                 this.updateDungeonUI();
@@ -341,7 +341,7 @@ class Game {
             correctAnswers: 0,
             totalQuestions: 0,
             badges: 0,
-            potions: 1,
+            potions: 0,
             balls: 0
         };
 

@@ -214,14 +214,7 @@ class BattleManager {
             }
         });
 
-        // Immediate feedback
-        if (choice.correct) {
-            this.showMessage("正解！");
-        } else {
-            this.showMessage("不正解！");
-        }
-
-        // Execute turn after a delay
+        // Execute turn after a short delay to verify button color
         setTimeout(() => {
             if (choice.correct) {
                 // Auto-select ATTACK move (physical/special)
@@ -229,7 +222,7 @@ class BattleManager {
                 if (attackMoves.length === 0) attackMoves = this.playerPokemon.moves; // Fallback
 
                 const randomMove = attackMoves[Math.floor(Math.random() * attackMoves.length)];
-                this.executePlayerAttack(randomMove);
+                this.executePlayerAttack(randomMove, "正解！ ");
             } else {
                 // Incorrect answer -> Use Support Move
                 if (window.game) window.game.stats.totalQuestions++;
@@ -241,15 +234,15 @@ class BattleManager {
                     moveName = statusMoves[Math.floor(Math.random() * statusMoves.length)];
                 }
 
-                this.executeSupportMove(moveName);
+                this.executeSupportMove(moveName, "不正解！ ");
             }
-        }, 1500);
+        }, 800);
     }
 
-    executePlayerAttack(moveName) {
+    executePlayerAttack(moveName, prefix = "") {
         const result = calculateDamage(this.playerPokemon, this.enemyPokemon, moveName);
 
-        this.showMessage(`${this.playerPokemon.name}の${moveName}！`);
+        this.showMessage(`${prefix}${this.playerPokemon.name}の${moveName}！`);
 
         // Animate player sprite
         spriteLoader.animateShake(document.getElementById('enemy-sprite'), this.enemyPokemon.id);
@@ -281,9 +274,9 @@ class BattleManager {
         }, 800);
     }
 
-    executeSupportMove(moveName) {
+    executeSupportMove(moveName, prefix = "") {
         const move = MOVES[moveName];
-        this.showMessage(`${this.playerPokemon.name}の${moveName}！`);
+        this.showMessage(`${prefix}${this.playerPokemon.name}の${moveName}！`);
 
         // Visual shake
         spriteLoader.animateShake(document.getElementById('enemy-sprite'), this.enemyPokemon.id);
