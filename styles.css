@@ -621,7 +621,7 @@ canvas#dungeon-canvas {
 @media (max-width: 768px) {
     .controls-pad {
         opacity: 1;
-        bottom: 10px;
+        bottom: 40px;
         right: 10px;
         gap: 8px;
     }
@@ -718,11 +718,11 @@ canvas#dungeon-canvas {
 
     /* Battle Screen */
     .battle-scene {
-        height: 35vh;
+        height: 40vh;
     }
 
     .battle-ui {
-        height: 65vh;
+        height: 60vh;
     }
 
     .message-box {
@@ -809,6 +809,15 @@ canvas#dungeon-canvas {
     }
 
     .starter-card {
-        width: 80%;
+        width: 200px;
+        padding: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .starter-sprite-canvas {
+        width: 80px;
+        height: 80px;
     }
 }

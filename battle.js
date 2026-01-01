@@ -422,8 +422,10 @@ class BattleManager {
 
         let leveledUp = false;
         if (!captured) {
-            const exp = Math.floor(this.enemyPokemon.baseStats.hp * this.enemyPokemon.level / 7);
+            const exp = Math.floor(this.enemyPokemon.baseStats.hp * this.enemyPokemon.level / 7) * 5;
+            this.showMessage(`${exp} の経験値獲得！`);
             leveledUp = this.playerPokemon.gainExp(exp);
+            this.updateUI(); // Visual update bar
         }
 
         setTimeout(() => {
@@ -476,6 +478,13 @@ class BattleManager {
         document.getElementById('player-hp-val').innerText = this.playerPokemon.hp;
         document.getElementById('player-max-hp-val').innerText = this.playerPokemon.maxHp;
         document.getElementById('player-hp-fill').style.width = (this.playerPokemon.hp / this.playerPokemon.maxHp * 100) + "%";
+
+        // Exp bar
+        if (this.playerPokemon.expToNext) {
+            const expPct = (this.playerPokemon.exp / this.playerPokemon.expToNext) * 100;
+            const expFill = document.getElementById('player-exp-fill');
+            if (expFill) expFill.style.width = expPct + "%";
+        }
 
         document.getElementById('enemy-name').innerText = this.enemyPokemon.name;
         document.getElementById('enemy-level').innerText = this.enemyPokemon.level;

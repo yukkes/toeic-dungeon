@@ -143,6 +143,27 @@ class Game {
             spriteLoader.drawToCanvas(cvs, this.playerPokemon.id);
         }
 
+        // Secret Cheat: Triple tap to level up
+        cvs.onclick = (e) => {
+            const now = Date.now();
+            if (!this.lastTapTime) this.lastTapTime = 0;
+            if (!this.tapCount) this.tapCount = 0;
+
+            if (now - this.lastTapTime < 1000) {
+                this.tapCount++;
+            } else {
+                this.tapCount = 1;
+            }
+            this.lastTapTime = now;
+
+            if (this.tapCount >= 3) {
+                this.tapCount = 0;
+                this.playerPokemon.gainExp(this.playerPokemon.expToNext - this.playerPokemon.exp);
+                alert(`${this.playerPokemon.name} は 不思議な力でレベルアップした！ (Lv.${this.playerPokemon.level})`);
+                this.updateDungeonUI();
+            }
+        };
+
         // Items
         document.getElementById('d-potion-count').innerText = `${this.items.potions}/${this.items.maxPotions}`;
         document.getElementById('d-ball-count').innerText = `${this.items.balls}/${this.items.maxBalls}`;
@@ -553,6 +574,7 @@ class Game {
 
     endBattle(won) {
         this.showScreen('dungeon-screen');
+        this.updateDungeonUI(); // Update HP bar
         if (this.dungeon) {
             this.dungeon.resumeFromBattle(won);
         }
