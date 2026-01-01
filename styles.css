@@ -184,10 +184,18 @@ body {
     background: #444;
     border: 2px solid #222;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     position: relative;
+    padding: 5px;
+}
+
+.box-slot canvas {
+    image-rendering: pixelated;
+    width: 100%;
+    height: auto;
 }
 
 .box-slot:hover {
@@ -217,9 +225,13 @@ body {
     padding: 5px 10px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     border: 1px solid #222;
     cursor: pointer;
+}
+
+.party-slot canvas {
+    image-rendering: pixelated;
 }
 
 .party-slot.selected {
@@ -573,4 +585,84 @@ canvas#dungeon-canvas {
     color: white;
     border-radius: 5px;
     cursor: pointer;
+}
+
+/* Gym Leader Progress Screen */
+.gym-leaders-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.gym-leader-card {
+    background: var(--ui-bg);
+    border: 3px solid #555;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.gym-leader-card.cleared {
+    opacity: 0.5;
+    filter: grayscale(100%);
+}
+
+.gym-leader-card.next {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(255, 204, 0, 0.6);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(255, 204, 0, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(255, 204, 0, 0.9);
+    }
+}
+
+.leader-sprite {
+    width: 100%;
+    height: auto;
+    image-rendering: pixelated;
+    margin-bottom: 8px;
+}
+
+.leader-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    margin: 5px 0;
+    color: var(--accent);
+}
+
+.leader-badge {
+    font-size: 10px;
+    color: #aaa;
+    margin: 3px 0;
+}
+
+.leader-status {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: var(--accent);
+    color: black;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 8px;
+    font-weight: bold;
+}
+
+.gym-leader-card.cleared .leader-status {
+    background: #4caf50;
+    color: white;
 }

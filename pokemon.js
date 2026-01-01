@@ -44,24 +44,53 @@ const POKEMON_DATA = {
     19: { name: "コラッタ", emoji: "🐀", type1: "normal", type2: null, hp: 30, attack: 56, defense: 35, spAttack: 25, spDefense: 35, speed: 72 },
     25: { name: "ピカチュウ", emoji: "⚡", type1: "electric", type2: null, hp: 35, attack: 55, defense: 40, spAttack: 50, spDefense: 50, speed: 90 },
     26: { name: "ライチュウ", emoji: "⚡", type1: "electric", type2: null, hp: 60, attack: 90, defense: 55, spAttack: 90, spDefense: 80, speed: 110 },
+    29: { name: "ニドラン♀", emoji: "🐭", type1: "poison", type2: null, hp: 55, attack: 47, defense: 52, spAttack: 40, spDefense: 40, speed: 41 },
+    31: { name: "ニドクイン", emoji: "🐭", type1: "poison", type2: "ground", hp: 90, attack: 92, defense: 87, spAttack: 75, spDefense: 85, speed: 76 },
+    32: { name: "ニドラン♂", emoji: "🐭", type1: "poison", type2: null, hp: 46, attack: 57, defense: 40, spAttack: 40, spDefense: 40, speed: 50 },
+    34: { name: "ニドキング", emoji: "🐭", type1: "poison", type2: "ground", hp: 81, attack: 102, defense: 77, spAttack: 85, spDefense: 75, speed: 85 },
+    37: { name: "ロコン", emoji: "🦊", type1: "fire", type2: null, hp: 38, attack: 41, defense: 40, spAttack: 50, spDefense: 65, speed: 65 },
     38: { name: "キュウコン", emoji: "🦊", type1: "fire", type2: null, hp: 73, attack: 76, defense: 75, spAttack: 81, spDefense: 100, speed: 100 },
     39: { name: "プリン", emoji: "🎤", type1: "normal", type2: "fairy", hp: 115, attack: 45, defense: 20, spAttack: 45, spDefense: 25, speed: 20 },
+    50: { name: "ディグダ", emoji: "🕳️", type1: "ground", type2: null, hp: 10, attack: 55, defense: 25, spAttack: 35, spDefense: 45, speed: 95 },
+    51: { name: "ダグトリオ", emoji: "🕳️", type1: "ground", type2: null, hp: 35, attack: 100, defense: 50, spAttack: 50, spDefense: 70, speed: 120 },
+    58: { name: "ガーディ", emoji: "🐕", type1: "fire", type2: null, hp: 55, attack: 70, defense: 45, spAttack: 70, spDefense: 50, speed: 60 },
+    59: { name: "ウインディ", emoji: "🐕", type1: "fire", type2: null, hp: 90, attack: 110, defense: 80, spAttack: 100, spDefense: 80, speed: 95 },
+    63: { name: "ケーシィ", emoji: "🥄", type1: "psychic", type2: null, hp: 25, attack: 20, defense: 15, spAttack: 105, spDefense: 55, speed: 90 },
+    64: { name: "ユンゲラー", emoji: "🥄", type1: "psychic", type2: null, hp: 40, attack: 35, defense: 30, spAttack: 120, spDefense: 70, speed: 105 },
     65: { name: "フーディン", emoji: "🥄", type1: "psychic", type2: null, hp: 55, attack: 50, defense: 45, spAttack: 135, spDefense: 95, speed: 120 },
+    69: { name: "マダツボミ", emoji: "🌿", type1: "grass", type2: "poison", hp: 50, attack: 75, defense: 35, spAttack: 70, spDefense: 30, speed: 40 },
+    70: { name: "ウツドン", emoji: "🌿", type1: "grass", type2: "poison", hp: 65, attack: 90, defense: 50, spAttack: 85, spDefense: 45, speed: 55 },
+    71: { name: "ウツボット", emoji: "🌿", type1: "grass", type2: "poison", hp: 80, attack: 105, defense: 65, spAttack: 100, spDefense: 70, speed: 70 },
+    74: { name: "イシツブテ", emoji: "🪨", type1: "rock", type2: "ground", hp: 40, attack: 80, defense: 100, spAttack: 30, spDefense: 30, speed: 20 },
+    77: { name: "ポニータ", emoji: "🐴", type1: "fire", type2: null, hp: 50, attack: 85, defense: 55, spAttack: 65, spDefense: 65, speed: 90 },
+    78: { name: "ギャロップ", emoji: "🐴", type1: "fire", type2: null, hp: 65, attack: 100, defense: 70, spAttack: 80, spDefense: 80, speed: 105 },
+    88: { name: "ベトベター", emoji: "💜", type1: "poison", type2: null, hp: 80, attack: 80, defense: 50, spAttack: 40, spDefense: 50, speed: 25 },
+    89: { name: "ベトベトン", emoji: "💜", type1: "poison", type2: null, hp: 105, attack: 105, defense: 75, spAttack: 65, spDefense: 100, speed: 50 },
+    95: { name: "イワーク", emoji: "🪨", type1: "rock", type2: "ground", hp: 35, attack: 45, defense: 160, spAttack: 30, spDefense: 45, speed: 70 },
+    100: { name: "ビリリダマ", emoji: "⚡", type1: "electric", type2: null, hp: 40, attack: 30, defense: 50, spAttack: 55, spDefense: 55, speed: 100 },
+    109: { name: "ドガース", emoji: "💨", type1: "poison", type2: null, hp: 40, attack: 65, defense: 95, spAttack: 60, spDefense: 45, speed: 35 },
+    110: { name: "マタドガス", emoji: "💨", type1: "poison", type2: null, hp: 65, attack: 90, defense: 120, spAttack: 85, spDefense: 70, speed: 60 },
+    111: { name: "サイホーン", emoji: "🦏", type1: "ground", type2: "rock", hp: 80, attack: 85, defense: 95, spAttack: 30, spDefense: 30, speed: 25 },
+    112: { name: "サイドン", emoji: "🦏", type1: "ground", type2: "rock", hp: 105, attack: 130, defense: 120, spAttack: 45, spDefense: 45, speed: 40 },
+    114: { name: "モンジャラ", emoji: "🌿", type1: "grass", type2: null, hp: 65, attack: 55, defense: 115, spAttack: 100, spDefense: 40, speed: 60 },
+    120: { name: "ヒトデマン", emoji: "⭐", type1: "water", type2: null, hp: 30, attack: 45, defense: 55, spAttack: 70, spDefense: 55, speed: 85 },
+    121: { name: "スターミー", emoji: "⭐", type1: "water", type2: "psychic", hp: 60, attack: 75, defense: 85, spAttack: 100, spDefense: 85, speed: 115 },
+    122: { name: "バリヤード", emoji: "🤡", type1: "psychic", type2: "fairy", hp: 40, attack: 45, defense: 65, spAttack: 100, spDefense: 120, speed: 90 },
     133: { name: "イーブイ", emoji: "🦊", type1: "normal", type2: null, hp: 55, attack: 55, defense: 55, spAttack: 45, spDefense: 65, speed: 55 },
     150: { name: "ミュウツー", emoji: "👽", type1: "psychic", type2: null, hp: 106, attack: 110, defense: 90, spAttack: 154, spDefense: 90, speed: 130 },
 
     // Gatekeeper (9F) - Dragonite substitute or just strong
     149: { name: "カイリュー", emoji: "🐲", type1: "dragon", type2: "flying", hp: 91, attack: 134, defense: 95, spAttack: 100, spDefense: 100, speed: 80 },
 
-    // Gym Leaders (Pseudo-Pokemon)
-    153: { name: "タケシ", emoji: "🗿", type1: "rock", type2: "ground", hp: 80, attack: 80, defense: 100, spAttack: 30, spDefense: 30, speed: 50 },
-    154: { name: "カスミ", emoji: "🧜‍♀️", type1: "water", type2: null, hp: 80, attack: 60, defense: 60, spAttack: 90, spDefense: 90, speed: 100 },
-    155: { name: "マチス", emoji: "⚡", type1: "electric", type2: null, hp: 80, attack: 90, defense: 60, spAttack: 80, spDefense: 60, speed: 100 },
-    156: { name: "エリカ", emoji: "🌺", type1: "grass", type2: null, hp: 90, attack: 60, defense: 80, spAttack: 90, spDefense: 100, speed: 60 },
-    157: { name: "キョウ", emoji: "🥷", type1: "poison", type2: null, hp: 90, attack: 90, defense: 80, spAttack: 70, spDefense: 70, speed: 90 },
-    158: { name: "ナツメ", emoji: "🔮", type1: "psychic", type2: null, hp: 70, attack: 50, defense: 50, spAttack: 120, spDefense: 100, speed: 110 },
-    159: { name: "カツラ", emoji: "🔥", type1: "fire", type2: null, hp: 80, attack: 90, defense: 70, spAttack: 100, spDefense: 80, speed: 90 },
-    160: { name: "サカキ", emoji: "🌍", type1: "ground", type2: null, hp: 100, attack: 100, defense: 100, spAttack: 60, spDefense: 60, speed: 80 }
+    // Gym Leaders (Trainer sprites, not used in battle directly)
+    153: { name: "タケシ", type1: "rock", type2: "ground", hp: 80, attack: 80, defense: 100, spAttack: 30, spDefense: 30, speed: 50 },
+    154: { name: "カスミ", type1: "water", type2: null, hp: 80, attack: 60, defense: 60, spAttack: 90, spDefense: 90, speed: 100 },
+    155: { name: "マチス", type1: "electric", type2: null, hp: 80, attack: 90, defense: 60, spAttack: 80, spDefense: 60, speed: 100 },
+    156: { name: "エリカ", type1: "grass", type2: null, hp: 90, attack: 60, defense: 80, spAttack: 90, spDefense: 100, speed: 60 },
+    157: { name: "キョウ", type1: "poison", type2: null, hp: 90, attack: 90, defense: 80, spAttack: 70, spDefense: 70, speed: 90 },
+    158: { name: "ナツメ", type1: "psychic", type2: null, hp: 70, attack: 50, defense: 50, spAttack: 120, spDefense: 100, speed: 110 },
+    159: { name: "カツラ", type1: "fire", type2: null, hp: 80, attack: 90, defense: 70, spAttack: 100, spDefense: 80, speed: 90 },
+    160: { name: "サカキ", type1: "ground", type2: null, hp: 100, attack: 100, defense: 100, spAttack: 60, spDefense: 60, speed: 80 }
 };
 
 const LEARNSETS = {
@@ -78,7 +107,99 @@ const LEARNSETS = {
     19: { 1: ["たいあたり", "しっぽをふる"], 7: "でんこうせっか", 14: "ひっさつまえば" },
     25: { 1: ["でんきショック", "なきごえ"], 9: "でんじは", 26: "10まんボルト" },
     149: { 1: ["たいあたり", "はかいこうせん"] },
+    63: { 1: ["テレポート"] },
+    64: { 1: ["ねんりき", "かなしばり"] },
+    74: { 1: ["たいあたり", "まるくなる"], 11: "いわおとし", 16: "じばく" },
+    95: { 1: ["たいあたり", "いわおとし"], 15: "しめつける", 19: "いわなだれ" },
+    100: { 1: ["たいあたり"], 9: "ソニックブーム", 17: "じばく" },
+    109: { 1: ["どくガス", "たいあたり"], 9: "ヘドロこうげき" },
+    110: { 1: ["どくガス", "たいあたり"], 9: "ヘドロこうげき" },
+    120: { 1: ["たいあたり", "かたくなる"], 7: "みずでっぽう" },
+    121: { 1: ["たいあたり", "みずでっぽう", "サイコキネシス"] },
     "default": { 1: ["たいあたり"] }
+};
+
+// Gym Leader Teams (original Pokemon game)
+const GYM_LEADER_TEAMS = {
+    153: [ // Takeshi (Brock)
+        { id: 74, level: 12 }, // Geodude
+        { id: 95, level: 14 }  // Onix
+    ],
+    154: [ // Kasumi (Misty)
+        { id: 120, level: 18 }, // Staryu
+        { id: 121, level: 21 }  // Starmie
+    ],
+    155: [ // Machisu (Lt. Surge)
+        { id: 100, level: 21 }, // Voltorb
+        { id: 25, level: 18 },  // Pikachu
+        { id: 26, level: 24 }   // Raichu
+    ],
+    156: [ // Erika
+        { id: 69, level: 29 },  // Bellsprout
+        { id: 114, level: 24 }, // Tangela
+        { id: 71, level: 29 }   // Victreebel
+    ],
+    157: [ // Kyou (Koga)
+        { id: 109, level: 37 }, // Koffing
+        { id: 88, level: 37 },  // Grimer
+        { id: 109, level: 37 }, // Koffing
+        { id: 89, level: 43 }   // Muk
+    ],
+    158: [ // Natsume (Sabrina)
+        { id: 63, level: 38 },  // Abra
+        { id: 64, level: 37 },  // Kadabra
+        { id: 122, level: 38 }, // Mr. Mime
+        { id: 65, level: 43 }   // Alakazam
+    ],
+    159: [ // Katsura (Blaine)
+        { id: 58, level: 42 },  // Growlithe
+        { id: 77, level: 40 },  // Ponyta
+        { id: 78, level: 42 },  // Rapidash
+        { id: 59, level: 47 }   // Arcanine
+    ],
+    160: [ // Sakaki (Giovanni)
+        { id: 111, level: 45 }, // Rhyhorn
+        { id: 51, level: 42 },  // Dugtrio
+        { id: 31, level: 44 },  // Nidoqueen
+        { id: 34, level: 45 },  // Nidoking
+        { id: 112, level: 50 }  // Rhydon
+    ]
+};
+
+// Gym Leader Dialogue
+const GYM_LEADER_DIALOGUE = {
+    153: {
+        pre: "やあ！ いい子だね\nポケモン 大好き！\nおじさんも 好きだけど\n強さは 別もの！",
+        post: "うーん！\nやるもんだ！\nグレーバッジを あげよう！"
+    },
+    154: {
+        pre: "あたし カスミ！\nみずポケモンの\nエキスパートよ！\n勝負しましょう！",
+        post: "すごいわ！\nあなた 強いのね！\nブルーバッジを どうぞ！"
+    },
+    155: {
+        pre: "ヘイ！ ベイビー！\nオレさま マチス！\nでんきポケモンで\nビリビリ させてやるぜ！",
+        post: "クゥー！ まいったぜ！\nオレンジバッジだ！\nもってけ！"
+    },
+    156: {
+        pre: "ようこそ\nタマムシジムへ\nしぜんを あいする\nわたしと 勝負ね！",
+        post: "まあ すてき！\nあなた 強いのね！\nレインボーバッジを どうぞ！"
+    },
+    157: {
+        pre: "フフフ...\nどくポケモンの 使い手\nキョウと もうす！\n忍法 勝負 いたす！",
+        post: "見事！\nピンクバッジを\nさしあげよう！"
+    },
+    158: {
+        pre: "わたしは ナツメ\nエスパーポケモンを\nあやつる もの\nあなたの こころ\nよめますわ...",
+        post: "まけました...\nゴールドバッジを\nどうぞ"
+    },
+    159: {
+        pre: "ワシは カツラ！\nほのおポケモンの\nエキスパートじゃ！\nもえる 勝負じゃ！",
+        post: "ほほう！\nやるのう！\nクリムゾンバッジじゃ！"
+    },
+    160: {
+        pre: "わたしが サカキ\nじめんポケモンの\nマスター！\nさあ 勝負だ！",
+        post: "ぐぬぬ...\nグリーンバッジだ\nもっていけ！"
+    }
 };
 
 class Pokemon {

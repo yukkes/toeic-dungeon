@@ -439,8 +439,8 @@ class BattleManager {
                 }
                 this.game.endBattle(true);
             } else {
-                // Gym
-                this.game.onGymVictory();
+                // Gym - Continue to next Pokemon in leader's team
+                this.game.onGymPokemonVictory();
             }
         }, 1000);
     }

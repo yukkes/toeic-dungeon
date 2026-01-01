@@ -68,7 +68,7 @@
                     </div>
                 </div>
                 <div class="party-section">
-                    <h3>Party (Max 6)</h3>
+                    <h3>Party (Max 3)</h3>
                     <div id="party-list" class="party-list">
                         <!-- Selected pokemon -->
                     </div>
@@ -76,6 +76,65 @@
                 </div>
             </div>
             <button class="pixel-btn back-btn" onclick="game.showScreen('title-screen')">戻る</button>
+        </div>
+
+        <!-- Gym Leader Progress Screen -->
+        <div id="gym-progress-screen" class="screen">
+            <h2 class="screen-title">ジムリーダー挑戦</h2>
+            <div class="gym-leaders-grid">
+                <!-- Row 1 -->
+                <div class="gym-leader-card" data-leader-id="153">
+                    <canvas class="leader-sprite" width="128" height="128"></canvas>
+                    <div class="leader-name">タケシ</div>
+                    <div class="leader-badge">🪨 グレーバッジ</div>
+                    <div class="leader-status">NEXT</div>
+                </div>
+                <div class="gym-leader-card" data-leader-id="154">
+                    <canvas class="leader-sprite" width="128" height="128"></canvas>
+                    <div class="leader-name">カスミ</div>
+                    <div class="leader-badge">💧 ブルーバッジ</div>
+                    <div class="leader-status"></div>
+                </div>
+                <div class="gym-leader-card" data-leader-id="155">
+                    <canvas class="leader-sprite" width="128" height="128"></canvas>
+                    <div class="leader-name">マチス</div>
+                    <div class="leader-badge">⚡ オレンジバッジ</div>
+                    <div class="leader-status"></div>
+                </div>
+                <div class="gym-leader-card" data-leader-id="156">
+                    <canvas class="leader-sprite" width="128" height="128"></canvas>
+                    <div class="leader-name">エリカ</div>
+                    <div class="leader-badge">🌿 レインボーバッジ</div>
+                    <div class="leader-status"></div>
+                </div>
+                <!-- Row 2 -->
+                <div class="gym-leader-card" data-leader-id="157">
+                    <canvas class="leader-sprite" width="128" height="128"></canvas>
+                    <div class="leader-name">キョウ</div>
+                    <div class="leader-badge">💜 ピンクバッジ</div>
+                    <div class="leader-status"></div>
+                </div>
+                <div class="gym-leader-card" data-leader-id="158">
+                    <canvas class="leader-sprite" width="128" height="128"></canvas>
+                    <div class="leader-name">ナツメ</div>
+                    <div class="leader-badge">🔮 ゴールドバッジ</div>
+                    <div class="leader-status"></div>
+                </div>
+                <div class="gym-leader-card" data-leader-id="159">
+                    <canvas class="leader-sprite" width="128" height="128"></canvas>
+                    <div class="leader-name">カツラ</div>
+                    <div class="leader-badge">🔥 クリムゾンバッジ</div>
+                    <div class="leader-status"></div>
+                </div>
+                <div class="gym-leader-card" data-leader-id="160">
+                    <canvas class="leader-sprite" width="128" height="128"></canvas>
+                    <div class="leader-name">サカキ</div>
+                    <div class="leader-badge">🌍 グリーンバッジ</div>
+                    <div class="leader-status"></div>
+                </div>
+            </div>
+            <button id="start-next-gym-btn" class="pixel-btn action-btn">次のジムリーダーに挑戦</button>
+            <button class="pixel-btn back-btn" onclick="game.showScreen('title-screen')">タイトルへ戻る</button>
         </div>
 
         <!-- Dungeon Screen -->

@@ -46,6 +46,7 @@ class Game {
 
         // Gym Party
         document.getElementById('start-gym-run-btn').onclick = () => this.startGymRun();
+        document.getElementById('start-next-gym-btn').onclick = () => this.startNextGymBattle();
 
         // Dungeon Controls
         document.getElementById('btn-up').onclick = () => this.dungeon && this.dungeon.movePlayer(0, -1);
@@ -272,9 +273,34 @@ class Game {
         this.box.forEach((pData, idx) => {
             const slot = document.createElement('div');
             slot.className = 'box-slot';
-            slot.innerText = POKEMON_DATA[pData.id].emoji;
-            slot.onclick = () => this.moveToParty(idx);
-            // Highlight if in party? No, move removes from view or dims
+
+            // Check if already in party
+            const alreadySelected = this.party.some(p => p.id === pData.id);
+
+            // Create canvas for sprite
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            if (window.spriteLoader) {
+                spriteLoader.drawToCanvas(canvas, pData.id);
+            }
+            slot.appendChild(canvas);
+
+            // Add level indicator
+            const levelDiv = document.createElement('div');
+            levelDiv.style.fontSize = '10px';
+            levelDiv.style.color = '#aaa';
+            levelDiv.innerText = `Lv.${pData.level}`;
+            slot.appendChild(levelDiv);
+
+            if (alreadySelected) {
+                slot.classList.add('selected');
+                slot.style.opacity = '0.5';
+                slot.style.cursor = 'not-allowed';
+            } else {
+                slot.onclick = () => this.moveToParty(idx);
+            }
+
             boxGrid.appendChild(slot);
         });
 
@@ -284,25 +310,43 @@ class Game {
         this.party.forEach((p, idx) => {
             const slot = document.createElement('div');
             slot.className = 'party-slot';
-            slot.innerHTML = `<span>${POKEMON_DATA[p.id].emoji} Lv.${p.level}</span> <small>${POKEMON_DATA[p.id].name}</small>`;
+
+            // Create canvas for sprite
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            canvas.style.marginRight = '10px';
+            if (window.spriteLoader) {
+                spriteLoader.drawToCanvas(canvas, p.id);
+            }
+
+            const info = document.createElement('div');
+            info.innerHTML = `<span>${POKEMON_DATA[p.id].name} Lv.${p.level}</span>`;
+
+            slot.appendChild(canvas);
+            slot.appendChild(info);
             slot.onclick = () => this.removeFromParty(idx);
             partyList.appendChild(slot);
         });
     }
 
     moveToParty(boxIdx) {
-        if (this.party.length >= 6) return; // Max 6
-        const pData = this.box[boxIdx]; // Clone?
-        // Instantiate
+        if (this.party.length >= 3) {
+            alert("パーティは3体までです！");
+            return;
+        }
+        const pData = this.box[boxIdx];
+
+        // Check for duplicates
+        if (this.party.some(p => p.id === pData.id)) {
+            alert("同じポケモンは選択できません！");
+            return;
+        }
+
         const pokemon = new Pokemon(pData.id, pData.level);
         pokemon.exp = pData.exp;
         pokemon.moves = pData.moves;
-
         this.party.push(pokemon);
-        // Visual update only, don't actually remove from Box persistent data yet
-        // But UI should hide it or prevent duplicate selection?
-        // Let's prevent duplicate select logic simply by ID check if unique
-        // Or simpler: Re-render.
         this.renderPartySelect();
     }
 
@@ -317,54 +361,153 @@ class Game {
             return;
         }
 
-        // Start Boss Rush
-        this.gymStage = 0; // 0 to 8 (8 leaders + Champ?) Spec says 8 + Champ?
-        // Spec says "Gym Battle Mode ... Boss Rush"
-        this.gymLeaders = [153, 154, 155, 156, 157, 158, 159, 160]; // IDs
+        // Initialize gym progress
+        this.gymLeaders = [153, 154, 155, 156, 157, 158, 159, 160];
+        this.gymStage = 0; // Current gym leader index
+        this.currentGymTeamIndex = 0; // Current Pokemon in leader's team
 
-        this.startGymBattleSequence();
+        // Load or reset progress
+        const saved = localStorage.getItem('gymProgress');
+        if (saved) {
+            this.gymStage = parseInt(saved);
+        }
+
+        this.showGymProgress();
     }
 
-    startGymBattleSequence() {
+    showGymProgress() {
+        this.showScreen('gym-progress-screen');
+
+        // Render all leader cards
+        const cards = document.querySelectorAll('.gym-leader-card');
+        cards.forEach((card, idx) => {
+            const leaderId = parseInt(card.dataset.leaderId);
+            const canvas = card.querySelector('.leader-sprite');
+            const statusEl = card.querySelector('.leader-status');
+
+            // Draw sprite
+            if (window.spriteLoader) {
+                spriteLoader.drawToCanvas(canvas, leaderId);
+            }
+
+            // Update status
+            card.classList.remove('cleared', 'next');
+            if (idx < this.gymStage) {
+                card.classList.add('cleared');
+                statusEl.innerText = 'CLEAR';
+            } else if (idx === this.gymStage) {
+                card.classList.add('next');
+                statusEl.innerText = 'NEXT';
+            } else {
+                statusEl.innerText = '';
+            }
+        });
+
+        // Auto-advance after 3 seconds
+        if (this.gymAutoAdvanceTimer) {
+            clearTimeout(this.gymAutoAdvanceTimer);
+        }
+        this.gymAutoAdvanceTimer = setTimeout(() => {
+            this.startNextGymBattle();
+        }, 3000);
+    }
+
+    startNextGymBattle() {
         if (this.gymStage >= this.gymLeaders.length) {
-            alert("殿堂入りおめでとう！(Gym Mode Clear)");
+            alert("すべてのジムリーダーを倒しました！\n殿堂入りおめでとう！");
+            localStorage.removeItem('gymProgress');
             this.showScreen('title-screen');
             return;
         }
 
         const leaderId = this.gymLeaders[this.gymStage];
-        this.showDialogue(leaderId, "pre").then(() => {
-            // Start Battle
-            // Player sends first pokemon alive
-            const valid = this.party.find(p => p.hp > 0);
-            if (!valid) {
-                this.onTrainingGameOver();
-                return;
-            }
-            this.playerPokemon = valid;
+        this.currentGymTeamIndex = 0;
 
-            // Enemy
-            // Scaling? Or Fixed? Spec didn't specify Gym Level Scaling strictly, 
-            // but Training Mode has rules. Gym probably fixed challenging levels.
-            // Let's say Level = 10 + (Stage * 5)
-            const gymLevel = 10 + (this.gymStage * 5);
-            const enemy = new Pokemon(leaderId, gymLevel); // Using ID produces Pseudo-Pokemon
+        // Show pre-battle dialogue
+        this.showGymDialogue(leaderId, "pre").then(() => {
+            // Show battle intro message
+            const leaderName = POKEMON_DATA[leaderId].name;
+            alert(`ジムリーダーの${leaderName}が 勝負をしかけてきた！`);
 
-            this.battleManager.startBattle(this.playerPokemon, enemy, 10); // Floor 10 equivalent?
+            // Start first Pokemon battle
+            this.startGymPokemonBattle();
         });
     }
 
-    onGymVictory() {
-        // Called by BattleManager
+    startGymPokemonBattle() {
         const leaderId = this.gymLeaders[this.gymStage];
-        this.showDialogue(leaderId, "post").then(() => {
+        const team = GYM_LEADER_TEAMS[leaderId];
+
+        if (this.currentGymTeamIndex >= team.length) {
+            // Leader defeated!
+            this.onGymLeaderDefeated();
+            return;
+        }
+
+        // Get player's first alive Pokemon
+        const valid = this.party.find(p => p.hp > 0);
+        if (!valid) {
+            this.onGymGameOver();
+            return;
+        }
+        this.playerPokemon = valid;
+
+        // Create enemy Pokemon from team data
+        const enemyData = team[this.currentGymTeamIndex];
+        const enemy = new Pokemon(enemyData.id, enemyData.level);
+
+        // TOEIC Level mapping: Takeshi=2, Kasumi=3, ..., Sakaki=9
+        const toeicLevel = this.gymStage + 2;
+
+        this.battleManager.startBattle(this.playerPokemon, enemy, toeicLevel);
+    }
+
+    onGymPokemonVictory() {
+        // Called by BattleManager when a gym Pokemon is defeated
+        this.currentGymTeamIndex++;
+        this.startGymPokemonBattle();
+    }
+
+    onGymLeaderDefeated() {
+        // All Pokemon in leader's team defeated
+        const leaderId = this.gymLeaders[this.gymStage];
+
+        this.showGymDialogue(leaderId, "post").then(() => {
             this.gymStage++;
-            // Heal party? "Boss Rush" usually implies limited healing?
-            // Let's heal fully for MVP to be nice.
-            // this.party.forEach(p => p.heal(9999)); 
-            // Actually, keep damage for challenge? Spec didn't say.
-            // Let's Keep damage.
-            this.startGymBattleSequence();
+            localStorage.setItem('gymProgress', this.gymStage);
+
+            // Return to progress screen
+            this.showGymProgress();
+        });
+    }
+
+    onGymGameOver() {
+        alert('目の前が真っ暗になった...');
+        localStorage.removeItem('gymProgress');
+        this.showScreen('title-screen');
+    }
+
+    showGymDialogue(leaderId, type) {
+        return new Promise(resolve => {
+            const overlay = document.getElementById('dialogue-overlay');
+            const nameEl = document.getElementById('dialogue-speaker');
+            const textEl = document.getElementById('dialogue-text');
+
+            overlay.style.display = 'flex';
+
+            const leaderName = POKEMON_DATA[leaderId].name;
+            nameEl.innerText = leaderName;
+
+            const dialogue = GYM_LEADER_DIALOGUE[leaderId];
+            const text = type === "pre" ? dialogue.pre : dialogue.post;
+            textEl.innerText = text;
+
+            const clickHandler = () => {
+                overlay.style.display = 'none';
+                overlay.removeEventListener('click', clickHandler);
+                resolve();
+            };
+            overlay.addEventListener('click', clickHandler);
         });
     }
 
