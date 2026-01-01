@@ -7,13 +7,32 @@ class SpriteLoader {
         this.columns = 4;
         this.loaded = false;
 
-        // Wait for sprite sheet to load
-        if (this.spriteSheet.complete) {
-            this.loaded = true;
-        } else {
-            this.spriteSheet.addEventListener('load', () => {
+        const checkLoad = () => {
+            if (this.spriteSheet.complete && this.spriteSheet.naturalWidth !== 0) {
                 this.loaded = true;
-            });
+                console.log("SpriteSheet loaded:", this.spriteSheet.naturalWidth, this.spriteSheet.naturalHeight);
+            }
+        };
+
+        if (this.spriteSheet.complete) {
+            checkLoad();
+        } else {
+            this.spriteSheet.onload = () => {
+                checkLoad();
+            };
+            this.spriteSheet.onerror = () => {
+                console.error("Failed to load poke.png");
+            };
+        }
+
+        // Polling fallback just in case
+        if (!this.loaded) {
+            const intv = setInterval(() => {
+                if (this.spriteSheet.complete && this.spriteSheet.naturalWidth !== 0) {
+                    this.loaded = true;
+                    clearInterval(intv);
+                }
+            }, 100);
         }
     }
 
@@ -69,6 +88,11 @@ class SpriteLoader {
      * @param {boolean} smooth - Enable image smoothing (default false)
      */
     drawToCanvas(canvas, id, smooth = false) {
+        if (!this.loaded) {
+            console.log("SpriteLoader waiting for image...", id);
+            setTimeout(() => this.drawToCanvas(canvas, id, smooth), 200);
+            return;
+        }
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         const scale = canvas.width / this.spriteSize;
@@ -109,4 +133,6 @@ class SpriteLoader {
 }
 
 // Create global sprite loader instance
-const spriteLoader = new SpriteLoader();
+// Create global sprite loader instance
+var spriteLoader = new SpriteLoader();
+window.spriteLoader = spriteLoader;

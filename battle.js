@@ -1,398 +1,496 @@
-// Battle System
-
 class BattleManager {
-    constructor() {
+    constructor(gameInstance) {
+        this.game = gameInstance;
         this.playerPokemon = null;
         this.enemyPokemon = null;
         this.currentQuestion = null;
-        this.pendingMove = null;
-        this.bindEvents();
+        this.battleActive = false;
+
+        // Bind UI
+        this.uiQuestionArea = document.getElementById('question-area');
+        this.uiMoveArea = document.getElementById('move-area');
+
+        // Commands
+        document.getElementById('btn-potion').onclick = () => this.usePotion();
+        document.getElementById('btn-ball').onclick = () => this.attemptCapture();
+        document.getElementById('btn-run').onclick = () => this.attemptRun();
     }
 
-    bindEvents() {
-        // Bind new question panel run button
-        const runBtn = document.getElementById('battle-run-btn');
-        if (runBtn) runBtn.addEventListener('click', () => this.attemptRun());
-
-        const ballBtn = document.getElementById('battle-ball-btn');
-        if (ballBtn) ballBtn.addEventListener('click', () => this.attemptCatch());
-    }
-
-    startBattle(playerPokemon, enemyPokemon, floor) {
-        this.playerPokemon = playerPokemon;
-        this.enemyPokemon = enemyPokemon;
-        this.battleActive = true;
-        this.pendingMove = null;
-
-        // Question level based on enemy level (1-10 -> Lv1, 11-20 -> Lv2, etc)
-        let qLevel = Math.floor((enemyPokemon.level - 1) / 10) + 1;
-        if (qLevel < 1) qLevel = 1;
-        if (qLevel > 10) qLevel = 10;
-        this.currentQuestion = getQuestionByLevel(qLevel);
-
-        // Update UI
-        this.updateBattleUI();
-        this.showMessage(`野生の${this.enemyPokemon.name}が現れた！`);
-
-        // Set Background
-        if (typeof getTheme === 'function') {
-            const theme = getTheme(floor);
-            const container = document.querySelector('.battle-container');
-            if (container) container.style.background = theme.battleBg;
+    usePotion() {
+        if (!this.battleActive) return;
+        if (this.game.items.potions <= 0) {
+            this.showMessage("傷薬を持っていない！");
+            return;
         }
 
-        // Draw sprites
+        const firstBtn = document.querySelector('.choice-btn');
+        if (firstBtn && firstBtn.style.pointerEvents === 'none') return;
+
+        // Lock inputs
+        this.lockInputs();
+
+        // Heal 50% Max HP
+        const healAmount = Math.floor(this.playerPokemon.maxHp / 2);
+        this.playerPokemon.heal(healAmount);
+        this.game.items.potions--;
+
+        this.updateUI();
+        this.showMessage(`傷薬を使った！ HPが回復した！ (残り: ${this.game.items.potions})`);
+
         setTimeout(() => {
-            spriteLoader.drawToCanvas(
-                document.getElementById('player-sprite'),
-                this.playerPokemon.id
-            );
-            spriteLoader.drawToCanvas(
-                document.getElementById('enemy-sprite'),
-                this.enemyPokemon.id
-            );
-
-            // Show question directly
-            setTimeout(() => {
-                this.displayQuestion();
-                this.showMessage("正解を選んで攻撃！");
-            }, 1000);
-        }, 100);
+            this.enemyTurn();
+        }, 1000);
     }
 
-    updateBattleUI() {
-        // Player stats
-        document.getElementById('battle-player-name').textContent = this.playerPokemon.name;
-        document.getElementById('battle-player-level').textContent = this.playerPokemon.level;
-        document.getElementById('player-hp').textContent = this.playerPokemon.hp;
-        document.getElementById('player-max-hp').textContent = this.playerPokemon.maxHp;
-
-        const playerHpPercent = (this.playerPokemon.hp / this.playerPokemon.maxHp) * 100;
-        const playerHpFill = document.getElementById('player-hp-fill');
-        playerHpFill.style.width = playerHpPercent + '%';
-
-        // Update HP bar color
-        if (playerHpPercent > 50) {
-            playerHpFill.className = 'hp-fill';
-        } else if (playerHpPercent > 25) {
-            playerHpFill.className = 'hp-fill medium';
-        } else {
-            playerHpFill.className = 'hp-fill low';
+    attemptCapture() {
+        if (!this.battleActive) return;
+        if (this.game.mode === 'gym') {
+            this.showMessage("人のポケモンは捕まえられない！");
+            return;
         }
-
-        // Experience bar
-        const expPercent = (this.playerPokemon.exp / this.playerPokemon.expToNext) * 100;
-        document.getElementById('player-exp-fill').style.width = expPercent + '%';
-
-        // Enemy stats
-        document.getElementById('enemy-name').textContent = this.enemyPokemon.name;
-        document.getElementById('enemy-level').textContent = this.enemyPokemon.level;
-        document.getElementById('enemy-hp').textContent = this.enemyPokemon.hp;
-        document.getElementById('enemy-max-hp').textContent = this.enemyPokemon.maxHp;
-
-        const enemyHpPercent = (this.enemyPokemon.hp / this.enemyPokemon.maxHp) * 100;
-        const enemyHpFill = document.getElementById('enemy-hp-fill');
-        enemyHpFill.style.width = enemyHpPercent + '%';
-
-        // Update HP bar color
-        if (enemyHpPercent > 50) {
-            enemyHpFill.className = 'hp-fill';
-        } else if (enemyHpPercent > 25) {
-            enemyHpFill.className = 'hp-fill medium';
-        } else {
-            enemyHpFill.className = 'hp-fill low';
+        if (this.game.dungeon && this.game.dungeon.interactingEnemy && this.game.dungeon.interactingEnemy.isBoss) {
+            this.showMessage("このポケモンは捕まえられない！");
+            return;
         }
-
-        // Update Ball Count
-        const ballCount = document.getElementById('battle-ball-count');
-        if (ballCount && window.game) {
-            ballCount.textContent = window.game.stats.balls;
-        }
-    }
-
-    attemptRun() {
-        if (this.playerPokemon.speed >= this.enemyPokemon.speed || Math.random() > 0.3) {
-            this.showMessage("うまく にげきれた！");
-            setTimeout(() => {
-                if (window.game) window.game.showScreen('dungeon-screen');
-            }, 1000);
-        } else {
-            this.showMessage("にげられない！");
-            setTimeout(() => {
-                this.executeEnemyTurn();
-            }, 1000);
-        }
-    }
-
-    attemptCatch() {
-        if (!window.game || window.game.stats.balls <= 0) {
+        if (this.game.items.balls <= 0) {
             this.showMessage("モンスターボールを持っていない！");
             return;
         }
 
-        window.game.stats.balls--;
-        this.updateBattleUI();
+        const firstBtn = document.querySelector('.choice-btn');
+        if (firstBtn && firstBtn.style.pointerEvents === 'none') return;
+
+        this.lockInputs();
+        this.game.items.balls--;
+        this.updateUI();
 
         this.showMessage("モンスターボールを投げた！");
 
-        // Chance increases as HP decreases (Min 10%, Max 100%)
-        const chance = 0.1 + (0.9 * (1 - this.enemyPokemon.hp / this.enemyPokemon.maxHp));
+        // Animation delay
+        setTimeout(() => {
+            // Capture Calc (Gen 1 style simplified)
+            // Status not impl fully, just HP
+            const max = this.enemyPokemon.maxHp;
+            const curr = this.enemyPokemon.hp;
+            // Rate: (3 * Max - 2 * Curr) * Rate / (3 * Max) ... roughly
+            // Let's assume Rate for all is decent for now, say 100 base?
+            // Simplified: Chance % = ((Max - Curr) / Max) * 0.8 + 0.2 (20% to 100%)
+            // Actually let's make it easier.
+            let chance = 0.3 + (1 - (curr / max)) * 0.6; // 30% at full, 90% at 0
+            if (Math.random() < chance) {
+                this.showMessage("やったー！ " + this.enemyPokemon.name + " を捕まえた！");
+                setTimeout(() => {
+                    this.victory(true);
+                }, 1000);
+            } else {
+                this.showMessage("ああっ！ ボールから出てしまった！");
+                setTimeout(() => {
+                    this.enemyTurn();
+                }, 1000);
+            }
+        }, 800);
+    }
+
+    lockInputs() {
+        const btns = document.querySelectorAll('.choice-btn');
+        btns.forEach(b => b.style.pointerEvents = 'none');
+    }
+
+    attemptRun() {
+        if (!this.battleActive) return;
+        // Simple input lock check
+        const firstBtn = document.querySelector('.choice-btn');
+        if (firstBtn && firstBtn.style.pointerEvents === 'none') return;
+
+        if (this.game.mode === 'gym') {
+            this.showMessage("トレーナー戦からは逃げられない！");
+            return;
+        }
+
+        if (this.game.mode === 'training' && this.game.dungeon && this.game.dungeon.interactingEnemy && this.game.dungeon.interactingEnemy.isBoss) {
+            this.showMessage("この戦いからは逃げられない！");
+            return;
+        }
+
+        // Lock inputs
+        const btns = document.querySelectorAll('.choice-btn');
+        btns.forEach(b => b.style.pointerEvents = 'none');
+
+        // Speed Check
+        const playerSpeed = this.playerPokemon.speed;
+        const enemySpeed = this.enemyPokemon.speed;
+
+        let success = false;
+        if (playerSpeed >= enemySpeed) success = true;
+        else {
+            // Chance: (PlayerSpeed * 128 / EnemySpeed + 30) % 256 logic simplified
+            success = Math.random() < 0.5;
+        }
+
+        if (success) {
+            this.showMessage("うまく逃げ切れた！");
+            setTimeout(() => {
+                this.battleActive = false;
+                this.game.endBattle(true); // Treat as won (removes enemy) but no XP
+            }, 1000);
+        } else {
+            this.showMessage("逃げられなかった！");
+            setTimeout(() => {
+                this.enemyTurn();
+            }, 1000);
+        }
+    }
+
+
+    startBattle(player, enemy, floor) {
+        this.playerPokemon = player;
+        this.enemyPokemon = enemy;
+        this.battleActive = true;
+        this.game.showScreen('battle-screen');
+
+        // Draw
+        if (window.spriteLoader) {
+            spriteLoader.drawToCanvas(document.getElementById('player-sprite'), player.id);
+            spriteLoader.drawToCanvas(document.getElementById('enemy-sprite'), enemy.id);
+        }
+
+        // Initial Question
+        let qLevel = floor;
+        this.currentQuestion = getQuestionByFloor(qLevel);
+
+        this.updateUI();
+        this.showMessage(`あ！ 野生の ${enemy.name} が飛び出してきた！`);
+
+        // Show Question after brief delay
+        setTimeout(() => {
+            this.prepareTurn();
+        }, 1500);
+    }
+
+    prepareTurn() {
+        if (!this.battleActive) return;
+        this.showMessage("どうする？ (正解を選んで技を繰り出そう！)");
+        this.presentQuestion();
+    }
+
+    presentQuestion() {
+        this.uiQuestionArea.style.display = 'block';
+        this.uiMoveArea.style.display = 'none';
+
+        document.getElementById('question-text').innerText = this.currentQuestion.question;
+        const grid = document.querySelector('.choices-grid');
+        grid.innerHTML = '';
+
+        // Shuffle choices
+        const choices = [...this.currentQuestion.choices].sort(() => Math.random() - 0.5);
+
+        choices.forEach(c => {
+            const btn = document.createElement('div');
+            btn.className = 'choice-btn';
+            btn.innerText = c.text;
+            btn.onclick = () => this.handleAnswer(c, btn);
+            grid.appendChild(btn);
+        });
+    }
+
+    handleAnswer(choice, btnElement) {
+        if (!this.battleActive) return;
+
+        const btns = document.querySelectorAll('.choice-btn');
+        btns.forEach(b => b.style.pointerEvents = 'none');
+
+        if (choice.correct) {
+            btnElement.classList.add('correct');
+            this.showMessage("正解！ 最大パワーで攻撃！");
+            this.setupAutoMove(true);
+        } else {
+            btnElement.classList.add('wrong');
+            btns.forEach(b => {
+                if (this.currentQuestion.choices.find(c => c.text === b.innerText).correct) {
+                    b.classList.add('correct');
+                }
+            });
+            this.showMessage("不正解... 補助技しか出せない！");
+            this.setupAutoMove(false);
+        }
+    }
+
+    setupAutoMove(isCorrect) {
+        setTimeout(() => {
+            if (isCorrect) {
+                // Pick Best Attack
+                let bestMove = null;
+                let maxDmg = -1;
+
+                const attackMoves = this.playerPokemon.moves.filter(m => {
+                    const d = MOVES[m];
+                    return d && d.category !== 'status';
+                });
+
+                if (attackMoves.length === 0) {
+                    bestMove = "たいあたり"; // Fallback
+                } else {
+                    attackMoves.forEach(m => {
+                        const sim = calculateDamage(this.playerPokemon, this.enemyPokemon, m);
+                        if (sim.damage > maxDmg) {
+                            maxDmg = sim.damage;
+                            bestMove = m;
+                        }
+                    });
+                }
+                this.playerTurn(bestMove);
+            } else {
+                // Pick Random Status
+                const statusMoves = this.playerPokemon.moves.filter(m => {
+                    const d = MOVES[m];
+                    return d && d.category === 'status';
+                });
+
+                if (statusMoves.length === 0) {
+                    this.showMessage("補助技を持っていない！ うまくいかなかった！");
+                    setTimeout(() => this.enemyTurn(), 1000);
+                } else {
+                    const randomM = statusMoves[Math.floor(Math.random() * statusMoves.length)];
+                    this.playerTurn(randomM);
+                }
+            }
+        }, 800);
+    }
+
+    getStatNameJP(stat) {
+        const map = {
+            attack: "こうげき", defense: "ぼうぎょ", spAttack: "とくこう", spDefense: "とくぼう",
+            speed: "すばやさ", accuracy: "めいちゅう", evasion: "かいひ"
+        };
+        return map[stat] || stat;
+    }
+
+    playerTurn(moveName) {
+        this.uiMoveArea.style.display = 'none';
+
+        this.showMessage(`${this.playerPokemon.name} の ${moveName}！`);
+
+        if (window.spriteLoader) {
+            spriteLoader.animateShake(document.getElementById('enemy-sprite'), this.enemyPokemon.id);
+        }
 
         setTimeout(() => {
-            if (Math.random() < chance) {
-                this.battleActive = false;
-                this.showMessage(`${this.enemyPokemon.name}を捕まえた！`);
-                if (window.game) {
-                    window.game.stats.totalBattles++;
-                    window.game.addToParty(this.enemyPokemon); // Add to party
-                    setTimeout(() => {
-                        window.game.endBattle(true);
-                    }, 2000);
+            let msg = "";
+            let fainted = false;
+            const mData = MOVES[moveName];
+
+            if (mData && mData.category === 'status') {
+                // Determine Target
+                let target = this.enemyPokemon;
+                if (mData.effect && mData.effect.amount > 0) target = this.playerPokemon; // Simple heuristic: Buffs are Self
+
+                if (target.changeStage && mData.effect && mData.effect.stat) {
+                    const changed = target.changeStage(mData.effect.stat, mData.effect.amount);
+                    if (changed) {
+                        const action = mData.effect.amount < 0 ? "さがった！" : "あがった！";
+                        msg = `${target.name} の ${this.getStatNameJP(mData.effect.stat)} が ${action}`;
+                    } else {
+                        msg = "効果がないようだ...";
+                    }
+                } else if (mData.isParalyze) {
+                    msg = `${target.name} は マヒしてしまった！(未実装)`;
+                } else if (mData.isLeechSeed) {
+                    msg = `${target.name} に 宿り木の種を植え付けた！(未実装)`;
+                } else {
+                    msg = "しかし うまくきまらなかった！";
                 }
             } else {
-                this.showMessage("捕まらなかった！");
-                setTimeout(() => {
-                    this.executeEnemyTurn();
-                }, 1000);
+                const result = calculateDamage(this.playerPokemon, this.enemyPokemon, moveName);
+                fainted = this.enemyPokemon.takeDamage(result.damage);
+                if (result.critical) msg += "急所にあたった！ ";
+                msg += getEffectivenessMessage(result.effectiveness);
+            }
+
+            this.updateUI();
+            if (msg) this.showMessage(msg);
+
+            setTimeout(() => {
+                if (fainted) {
+                    this.victory();
+                } else {
+                    this.enemyTurn();
+                }
+            }, 1000);
+        }, 500);
+    }
+
+    enemyTurn() {
+        // Smart AI: Max Damage
+        const moves = this.enemyPokemon.moves;
+        let bestMove = moves[0];
+        let maxDamage = -1;
+
+        moves.forEach(m => {
+            const data = MOVES[m];
+            if (!data) return;
+            if (data.category === 'status') {
+                if (maxDamage < 0) {
+                    maxDamage = 0;
+                    bestMove = m;
+                }
+            } else {
+                // Simulate
+                const sim = calculateDamage(this.enemyPokemon, this.playerPokemon, m);
+                if (sim.damage > maxDamage) {
+                    maxDamage = sim.damage;
+                    bestMove = m;
+                }
+            }
+        });
+
+        const moveName = bestMove;
+        this.showMessage(`敵の ${this.enemyPokemon.name} の ${moveName}！`);
+
+        if (window.spriteLoader) {
+            spriteLoader.animateShake(document.getElementById('player-sprite'), this.playerPokemon.id);
+        }
+
+        setTimeout(() => {
+            let msg = "";
+            let fainted = false;
+            const mData = MOVES[moveName];
+
+            if (mData && mData.category === 'status') {
+                // Determine Target
+                let target = this.playerPokemon;
+                if (mData.effect && mData.effect.amount > 0) target = this.enemyPokemon; // Buffs are Self
+
+                if (target.changeStage && mData.effect && mData.effect.stat) {
+                    const changed = target.changeStage(mData.effect.stat, mData.effect.amount);
+                    if (changed) {
+                        const action = mData.effect.amount < 0 ? "さがった！" : "あがった！";
+                        msg = `${target.name} の ${this.getStatNameJP(mData.effect.stat)} が ${action}`;
+                    } else {
+                        msg = "効果がないようだ...";
+                    }
+                } else if (mData.isParalyze) {
+                    msg = `${target.name} は マヒしてしまった！(未実装)`;
+                } else if (mData.isLeechSeed) {
+                    msg = `${target.name} に 宿り木の種を植え付けた！(未実装)`;
+                } else {
+                    msg = "しかし うまくきまらなかった！";
+                }
+            } else {
+                const result = calculateDamage(this.enemyPokemon, this.playerPokemon, moveName);
+                fainted = this.playerPokemon.takeDamage(result.damage);
+                if (result.critical) msg += "急所にあたった！ ";
+                msg += getEffectivenessMessage(result.effectiveness);
+            }
+
+            this.updateUI();
+            if (msg) this.showMessage(msg);
+
+            setTimeout(() => {
+                if (fainted) {
+                    this.defeat();
+                } else {
+                    if (this.game.mode === 'training') {
+                        this.currentQuestion = getQuestionByFloor(this.game.currentFloor);
+                    } else {
+                        this.currentQuestion = getQuestionByFloor(10);
+                    }
+                    this.prepareTurn();
+                }
+            }, 1000);
+
+        }, 500);
+    }
+
+    victory(captured = false) {
+        this.battleActive = false;
+        if (captured) {
+            this.game.saveManager.saveToBox(this.enemyPokemon); // Save captured
+            // Add to party if space available
+            if (this.game.party.length < 6) {
+                this.game.party.push(this.enemyPokemon);
+                this.showMessage("手持ちに加わった！");
+            } else {
+                this.showMessage("ボックスに転送された！");
+            }
+        }
+
+        const msg = captured ? "捕獲に成功した！" : "敵を倒した！";
+        this.showMessage(msg);
+
+        // Exp gain (only if killed? In Gen 1 yes, Gen 6+ no. Let's give XP only for kill for now to keep simple, or maybe half?)
+        // Let's Skip XP for capture for MVP simplicity unless requested.
+
+        let leveledUp = false;
+        if (!captured) {
+            const exp = Math.floor(this.enemyPokemon.baseStats.hp * this.enemyPokemon.level / 7);
+            leveledUp = this.playerPokemon.gainExp(exp);
+        }
+
+        setTimeout(() => {
+            if (leveledUp) {
+                alert(`${this.playerPokemon.name} は Lv${this.playerPokemon.level} になった！`);
+            }
+
+            // Return to Game Loop
+            if (this.game.mode === 'training') {
+                this.game.showScreen('dungeon-screen');
+                if (!captured && this.enemyPokemon.id === 149 && this.game.currentFloor === 9) {
+                    this.game.onComponentsCleared(); // Victory
+                }
+                this.game.endBattle(true);
+            } else {
+                // Gym
+                this.game.onGymVictory();
             }
         }, 1000);
     }
 
-    displayQuestion() {
-        if (!this.currentQuestion) return;
-
-        document.getElementById('question-text').textContent = this.currentQuestion.question;
-
-        const choicesContainer = document.getElementById('choices');
-        choicesContainer.innerHTML = '';
-
-        // Prepare choices (4 choices)
-        let displayChoices = [...this.currentQuestion.choices];
-        // Shuffle
-        displayChoices.sort(() => Math.random() - 0.5);
-
-        displayChoices.forEach((choice, index) => {
-            const button = document.createElement('button');
-            button.className = 'choice-btn pixel-btn';
-            button.dataset.index = index; // Note: this index is for display array, but we need to track correctness
-
-            const label = document.createElement('span');
-            label.className = 'choice-label';
-            label.textContent = String.fromCharCode(65 + index); // A, B
-
-            const text = document.createElement('span');
-            text.className = 'choice-text';
-            text.textContent = choice.text;
-
-            button.appendChild(label);
-            button.appendChild(text);
-
-            button.addEventListener('click', () => this.handleChoice(choice));
-
-            choicesContainer.appendChild(button);
-        });
-
-        // Adjust grid for 2 choices if needed (CSS) logic handled by grid-template-columns: repeat(2, 1fr) works fine for 2 items.
-    }
-
-    handleChoice(choice) {
-        const buttons = document.querySelectorAll('.choice-btn');
-
-        buttons.forEach(btn => {
-            btn.disabled = true;
-            const btnText = btn.querySelector('.choice-text').textContent;
-
-            if (btnText === choice.text) {
-                btn.classList.add(choice.correct ? 'correct' : 'incorrect');
-            }
-
-            if (!choice.correct) {
-                const correctC = this.currentQuestion.choices.find(c => c.correct);
-                if (btn.querySelector('.choice-text').textContent === correctC.text) {
-                    btn.classList.add('correct');
-                }
-            }
-        });
-
-        // Execute turn after a short delay to verify button color
-        setTimeout(() => {
-            if (choice.correct) {
-                // Auto-select ATTACK move (physical/special)
-                let attackMoves = this.playerPokemon.moves.filter(m => MOVES[m] && MOVES[m].category !== 'status');
-                if (attackMoves.length === 0) attackMoves = this.playerPokemon.moves; // Fallback
-
-                const randomMove = attackMoves[Math.floor(Math.random() * attackMoves.length)];
-                this.executePlayerAttack(randomMove, "正解！ ");
-            } else {
-                // Incorrect answer -> Use Support Move
-                if (window.game) window.game.stats.totalQuestions++;
-
-                // Find status move (priority) or fallback
-                let statusMoves = this.playerPokemon.moves.filter(m => MOVES[m] && MOVES[m].category === 'status');
-                let moveName = "なきごえ"; // Default fallback
-                if (statusMoves.length > 0) {
-                    moveName = statusMoves[Math.floor(Math.random() * statusMoves.length)];
-                }
-
-                this.executeSupportMove(moveName, "不正解！ ");
-            }
-        }, 800);
-    }
-
-    executePlayerAttack(moveName, prefix = "") {
-        const result = calculateDamage(this.playerPokemon, this.enemyPokemon, moveName);
-
-        this.showMessage(`${prefix}${this.playerPokemon.name}の${moveName}！`);
-
-        // Animate player sprite
-        spriteLoader.animateShake(document.getElementById('enemy-sprite'), this.enemyPokemon.id);
-
-        setTimeout(() => {
-            const defeated = this.enemyPokemon.takeDamage(result.damage);
-
-            let message = `${result.damage}のダメージ！ `;
-            message += getEffectivenessMessage(result.effectiveness);
-
-            this.showMessage(message);
-            this.updateBattleUI();
-
-            // Track stats
-            if (window.game) {
-                window.game.stats.totalQuestions++;
-                window.game.stats.correctAnswers++;
-            }
-
-            if (defeated) {
-                setTimeout(() => {
-                    this.handleVictory();
-                }, 1500);
-            } else {
-                setTimeout(() => {
-                    this.executeEnemyTurn();
-                }, 1500);
-            }
-        }, 800);
-    }
-
-    executeSupportMove(moveName, prefix = "") {
-        const move = MOVES[moveName];
-        this.showMessage(`${prefix}${this.playerPokemon.name}の${moveName}！`);
-
-        // Visual shake
-        spriteLoader.animateShake(document.getElementById('enemy-sprite'), this.enemyPokemon.id);
-
-        setTimeout(() => {
-            // Apply effect if method exists
-            if (move && move.effect && this.enemyPokemon.changeStage) {
-                const changed = this.enemyPokemon.changeStage(move.effect.stat, move.effect.amount);
-                if (changed) {
-                    let text = move.effect.amount < 0 ? "さがった！" : "あがった！";
-                    // JP Stat names
-                    const statsJP = { attack: "こうげき", defense: "ぼうぎょ", spAttack: "とくこう", spDefense: "とくぼう", speed: "すばやさ" };
-                    const statName = statsJP[move.effect.stat] || move.effect.stat;
-
-                    this.showMessage(`${this.enemyPokemon.name}の${statName}が${text}`);
-                } else {
-                    this.showMessage("しかし うまくきまらなかった！");
-                }
-            } else {
-                this.showMessage("しかし うまくきまらなかった！");
-            }
-
-            setTimeout(() => {
-                this.executeEnemyTurn();
-            }, 1500);
-        }, 800);
-    }
-
-    executeEnemyTurn() {
-        // AI prioritizes attacks
-        let attackMoves = this.enemyPokemon.moves.filter(m => MOVES[m] && MOVES[m].category !== 'status');
-        // If empty (only status moves?), use all moves or fallback
-        if (attackMoves.length === 0) attackMoves = this.enemyPokemon.moves;
-        if (attackMoves.length === 0) attackMoves = ["たいあたり"];
-
-        const moveName = attackMoves[Math.floor(Math.random() * attackMoves.length)];
-
-        const result = calculateDamage(this.enemyPokemon, this.playerPokemon, moveName);
-
-        this.showMessage(`${this.enemyPokemon.name}の${moveName}！`);
-
-        // Animate enemy sprite
-        spriteLoader.animateShake(document.getElementById('player-sprite'), this.playerPokemon.id);
-
-        setTimeout(() => {
-            const defeated = this.playerPokemon.takeDamage(result.damage);
-
-            // Should be 0 if status move like なきごえ but calculateDamage handles it (returns 1 min for now)
-            // Ideally non-damaging moves deal 0. current impl deals min 1.
-            // Good enough for MVP.
-
-            let message = `${result.damage}のダメージ！ `;
-            message += getEffectivenessMessage(result.effectiveness);
-
-            this.showMessage(message);
-            this.updateBattleUI();
-
-            if (defeated) {
-                setTimeout(() => {
-                    this.handleDefeat();
-                }, 1500);
-            } else {
-                // New question for next turn?
-                // New question for next round?
-                setTimeout(() => {
-                    // Update question for next round
-                    let qLevel = Math.floor((this.enemyPokemon.level - 1) / 10) + 1;
-                    if (qLevel < 1) qLevel = 1;
-                    if (qLevel > 10) qLevel = 10;
-                    this.currentQuestion = getQuestionByLevel(qLevel);
-
-                    this.displayQuestion();
-                    this.showMessage("正解を選んで攻撃！");
-                }, 1500);
-            }
-        }, 800);
-    }
-
-    handleVictory() {
+    defeat() {
         this.battleActive = false;
+        this.showMessage(`${this.playerPokemon.name} は倒れた...`);
 
-        // Calculate exp
-        const expGained = Math.floor(this.enemyPokemon.level * 50 * 1.5);
-        this.playerPokemon.gainExp(expGained);
-
-        this.showMessage(`${this.enemyPokemon.name}を倒した！ ${expGained}の経験値を獲得！`);
-
-        // Track stats
-        if (window.game) {
-            window.game.stats.totalBattles++;
+        // Switch Pokemon? (Gym Mode)
+        if (this.game.mode === 'gym') {
+            const next = this.game.switchPokemonInBattle();
+            if (next) {
+                setTimeout(() => {
+                    this.playerPokemon = next;
+                    this.updateUI();
+                    this.showMessage(`いけ！ ${next.name}！`);
+                    setTimeout(() => this.prepareTurn(), 1000);
+                }, 1500);
+                return;
+            }
         }
 
-        // Check for level up
+        // Game Over
         setTimeout(() => {
-            this.updateBattleUI();
-
-            setTimeout(() => {
-                if (window.game) {
-                    window.game.endBattle(true);
-                }
-            }, 2000);
+            this.game.onTrainingGameOver();
         }, 1500);
     }
 
-    handleDefeat() {
-        this.battleActive = false;
-        this.showMessage(`${this.playerPokemon.name}は倒れた...`);
+    updateUI() {
+        // Update Bars and Text
+        document.getElementById('battle-player-name').innerText = this.playerPokemon.name;
+        document.getElementById('battle-player-level').innerText = this.playerPokemon.level;
+        document.getElementById('player-hp-val').innerText = this.playerPokemon.hp;
+        document.getElementById('player-max-hp-val').innerText = this.playerPokemon.maxHp;
+        document.getElementById('player-hp-fill').style.width = (this.playerPokemon.hp / this.playerPokemon.maxHp * 100) + "%";
 
-        setTimeout(() => {
-            if (window.game) {
-                window.game.gameOver();
-            }
-        }, 2000);
+        document.getElementById('enemy-name').innerText = this.enemyPokemon.name;
+        document.getElementById('enemy-level').innerText = this.enemyPokemon.level;
+        document.getElementById('enemy-hp-fill').style.width = (this.enemyPokemon.hp / this.enemyPokemon.maxHp * 100) + "%";
+
+        // Update Command Buttons with counts
+        if (this.game.items) {
+            const potLbl = document.getElementById('lbl-potion');
+            const ballLbl = document.getElementById('lbl-ball');
+            if (potLbl) potLbl.innerText = `傷薬(${this.game.items.potions})`;
+            if (ballLbl) ballLbl.innerText = `ボール(${this.game.items.balls})`;
+        }
     }
 
-    showMessage(message) {
-        document.getElementById('message-log').textContent = message;
+    showMessage(text) {
+        document.getElementById('message-box').innerText = text;
     }
 }

@@ -1,414 +1,423 @@
-// Main Game Controller
-
 class Game {
     constructor() {
-        this.currentScreen = 'title';
-        this.playerPokemon = null;
-        this.currentFloor = 1;
-        this.party = [];
-        this.dungeon = null;
-        this.dungeonSeed = Date.now();
-        this.battleManager = new BattleManager();
-        this.saveManager = new SaveManager();
+        this.currentScreen = 'title-screen';
+        this.mode = null; // 'training' | 'gym'
 
-        // Stats
-        this.stats = {
-            totalBattles: 0,
-            correctAnswers: 0,
-            totalQuestions: 0,
-            badges: 0,
+        // Data
+        this.saveManager = new SaveManager();
+        this.battleManager = new BattleManager(this);
+        this.dungeon = null;
+
+        // State
+        this.playerPokemon = null; // Active Pokemon (Training Leader or Gym Battler)
+        this.party = []; // For Gym Mode (up to 6)
+        this.box = []; // Loaded from Storage
+        this.currentFloor = 1;
+
+        // Inventory
+        this.items = {
             potions: 0,
-            balls: 0
+            maxPotions: 5,
+            balls: 0,
+            maxBalls: 5
         };
 
-        // Make game globally accessible
-        window.game = this;
+        // UI Binding
+        this.bindEvents();
 
+        // Init
         this.init();
     }
 
     init() {
-        // Setup event listeners
-        this.setupTitleScreen();
-        this.setupStarterSelection();
-        this.setupDungeonControls();
-        this.setupResultScreens();
-
-        // Check for existing save data
-        if (this.saveManager.hasSaveData()) {
-            document.getElementById('continue-btn').style.display = 'block';
-        } else {
-            document.getElementById('continue-btn').style.display = 'none';
-        }
-    }
-
-    setupTitleScreen() {
-        document.getElementById('new-game-btn').addEventListener('click', () => {
-            this.saveManager.clearSave();
-            this.showScreen('starter-screen');
-            this.renderStarters();
-        });
-
-        document.getElementById('continue-btn').addEventListener('click', () => {
-            this.loadGame();
-        });
-    }
-
-    setupStarterSelection() {
-        const starterCards = document.querySelectorAll('.starter-card');
-        starterCards.forEach(card => {
-            card.addEventListener('click', () => {
-                const pokemonId = parseInt(card.dataset.id);
-                this.selectStarter(pokemonId);
-            });
-        });
-    }
-
-    setupDungeonControls() {
-        document.getElementById('move-up').addEventListener('click', () => this.movePlayer(0, -1));
-        document.getElementById('move-down').addEventListener('click', () => this.movePlayer(0, 1));
-        document.getElementById('move-left').addEventListener('click', () => this.movePlayer(-1, 0));
-        document.getElementById('move-right').addEventListener('click', () => this.movePlayer(1, 0));
-        const potionBtn = document.getElementById('dungeon-potion-btn');
-        if (potionBtn) potionBtn.addEventListener('click', () => this.usePotion());
-
-        const partyBtn = document.getElementById('dungeon-party-btn');
-        if (partyBtn) partyBtn.addEventListener('click', () => this.switchLeader());
-
-        // Keyboard controls
-        document.addEventListener('keydown', (e) => {
-            if (this.currentScreen !== 'dungeon-screen') return;
-
-            switch (e.key) {
-                case 'ArrowUp':
-                case 'w':
-                case 'W':
-                    e.preventDefault();
-                    this.movePlayer(0, -1);
-                    break;
-                case 'ArrowDown':
-                case 's':
-                case 'S':
-                    e.preventDefault();
-                    this.movePlayer(0, 1);
-                    break;
-                case 'ArrowLeft':
-                case 'a':
-                case 'A':
-                    e.preventDefault();
-                    this.movePlayer(-1, 0);
-                    break;
-                case 'ArrowRight':
-                case 'd':
-                case 'D':
-                    e.preventDefault();
-                    this.movePlayer(1, 0);
-                    break;
-            }
-        });
-    }
-
-    setupResultScreens() {
-        document.getElementById('return-title-btn').addEventListener('click', () => {
-            this.returnToTitle();
-        });
-
-        document.getElementById('retry-btn').addEventListener('click', () => {
-            this.returnToTitle();
-        });
-    }
-
-    renderStarters() {
-        // Draw starter sprites
-        const starterIds = [1, 4, 7]; // Bulbasaur, Charmander, Squirtle
-        const starterSprites = document.querySelectorAll('.starter-sprite');
-
-        starterSprites.forEach((canvas, index) => {
-            spriteLoader.drawToCanvas(canvas, starterIds[index]);
-        });
-    }
-
-    selectStarter(pokemonId) {
-        this.playerPokemon = new Pokemon(pokemonId, 5);
-        this.party = [this.playerPokemon];
-        this.currentFloor = 1;
-        this.dungeonSeed = Date.now();
-        this.startDungeon();
-    }
-
-    startDungeon() {
-        this.dungeon = new Dungeon(this.currentFloor, this.dungeonSeed);
-        this.showScreen('dungeon-screen');
-        this.updateDungeonUI();
-        this.renderDungeon();
-        this.autoSave();
-    }
-
-    updateDungeonUI() {
-        document.getElementById('player-name').textContent = this.playerPokemon.name;
-        document.getElementById('player-level').textContent = this.playerPokemon.level;
-
-        const playerSpriteCanvas = document.getElementById('dungeon-player-sprite');
-        if (playerSpriteCanvas) {
-            spriteLoader.drawToCanvas(playerSpriteCanvas, this.playerPokemon.id, true);
-        }
-
-        const hpEl = document.getElementById('dungeon-player-hp');
-        const maxHpEl = document.getElementById('dungeon-player-max-hp');
-        if (hpEl) hpEl.textContent = this.playerPokemon.hp;
-        if (maxHpEl) maxHpEl.textContent = this.playerPokemon.maxHp;
-
-        document.getElementById('floor-display').textContent = `${this.currentFloor}F`;
-        document.getElementById('badge-count').textContent = this.stats.badges;
-        document.getElementById('dungeon-potion-count').textContent = this.stats.potions;
-        const ballCount = document.getElementById('dungeon-ball-count');
-        if (ballCount) ballCount.textContent = this.stats.balls;
-
-        const partyCount = document.getElementById('party-count');
-        if (partyCount) partyCount.textContent = this.party.length;
-    }
-
-    switchLeader() {
-        if (this.party.length <= 1) {
-            this.showDungeonMessage("交代するポケモンがいません！");
-            return;
-        }
-
-        // Rotate party
-        const first = this.party.shift();
-        this.party.push(first);
-        this.playerPokemon = this.party[0];
-
-        this.showDungeonMessage(`${this.playerPokemon.name}に交代した！`);
-        this.updateDungeonUI();
-        // Redraw dungeon to update sprite
-        if (this.dungeon) this.dungeon.draw(document.getElementById('dungeon-canvas').getContext('2d'), 640, 480);
-    }
-
-    addToParty(pokemon) {
-        if (this.party.length < 6) {
-            this.party.push(pokemon);
-            this.showDungeonMessage(`${pokemon.name}が仲間になった！`);
-        } else {
-            this.showDungeonMessage(`${pokemon.name}を捕まえたが、手持ちがいっぱいなので逃がした... (PC機能未実装)`);
-        }
-        this.updateDungeonUI();
-    }
-
-    usePotion() {
-        if (this.stats.potions > 0) {
-            if (this.playerPokemon.hp < this.playerPokemon.maxHp) {
-                this.stats.potions--;
-                const healAmount = Math.floor(this.playerPokemon.maxHp / 2);
-                this.playerPokemon.heal(healAmount);
-                this.updateDungeonUI();
-                this.showDungeonMessage(`キズぐすりを つかった！ HPが${healAmount}かいふくした！`);
-            } else {
-                this.showDungeonMessage("HPは まんたんだ！");
-            }
-        } else {
-            this.showDungeonMessage("キズぐすりを もっていない！");
-        }
-    }
-
-    renderDungeon() {
-        const canvas = document.getElementById('dungeon-canvas');
-        const ctx = canvas.getContext('2d');
-        this.dungeon.draw(ctx, canvas.width, canvas.height);
-    }
-
-    movePlayer(dx, dy) {
-        const result = this.dungeon.movePlayer(dx, dy);
-        this.renderDungeon();
-
-        if (result === 'encounter') {
-            this.startEncounter();
-        } else if (result === 'stairs') {
-            this.nextFloor();
-        } else if (result && result.type === 'item') {
-            this.pickupItem(result.item);
-        }
-
-        this.autoSave();
-    }
-
-    pickupItem(item) {
-        if (item.type === 'potion') {
-            if (this.stats.potions < 3) {
-                this.stats.potions++;
-                this.showDungeonMessage("キズぐすりを拾った！");
-                this.updateDungeonUI();
-            } else {
-                this.showDungeonMessage("持ち物がいっぱいで拾えない！");
-            }
-        } else if (item.type === 'ball') {
-            if (this.stats.balls < 6) {
-                this.stats.balls++;
-                this.showDungeonMessage("モンスターボールを拾った！");
-                this.updateDungeonUI();
-            } else {
-                this.showDungeonMessage("持ち物がいっぱいで拾えない！");
-            }
-        }
-    }
-
-    startEncounter() {
-        const enemyId = getEnemyForFloor(this.currentFloor);
-        const enemyLevel = getEnemyLevel(this.currentFloor);
-        const enemyPokemon = new Pokemon(enemyId, enemyLevel);
-
-        this.showScreen('battle-screen');
-        this.battleManager.startBattle(this.playerPokemon, enemyPokemon, this.currentFloor);
-    }
-
-    endBattle(victory) {
-        if (victory) {
-            this.showScreen('dungeon-screen');
-            this.updateDungeonUI();
-            this.autoSave();
-        }
-    }
-
-    nextFloor() {
-        this.currentFloor++;
-
-        // Check if this is a gym leader floor (every 10 floors)
-        if (this.currentFloor % 10 === 0) {
-            this.startGymBattle();
-        } else {
-            // Generate new dungeon
-            this.dungeonSeed = Date.now();
-            this.startDungeon();
-        }
-    }
-
-    startGymBattle() {
-        // Gym leader Pokemon (for now, use strong Pokemon)
-        const gymLeaderPokemon = [95, 121, 26, 38, 65, 6, 9, 150]; // One for each gym
-        const gymIndex = Math.floor(this.currentFloor / 10) - 1;
-
-        if (gymIndex >= 8) {
-            // Victory!
-            this.victory();
-            return;
-        }
-
-        const gymPokemonId = gymLeaderPokemon[gymIndex];
-        const gymPokemon = new Pokemon(gymPokemonId, 25 + gymIndex * 5);
-
-        this.showScreen('battle-screen');
-        this.battleManager.startBattle(this.playerPokemon, gymPokemon, 10);
-
-        // Mark as gym battle (could add special handling)
-        this.isGymBattle = true;
-    }
-
-    victory() {
-        this.showScreen('victory-screen');
-
-        document.getElementById('defeated-gyms').textContent = Math.floor(this.currentFloor / 10);
-        document.getElementById('total-badges').textContent = this.stats.badges;
-        document.getElementById('total-battles').textContent = this.stats.totalBattles;
-
-        const accuracy = this.stats.totalQuestions > 0
-            ? Math.floor((this.stats.correctAnswers / this.stats.totalQuestions) * 100)
-            : 0;
-        document.getElementById('accuracy').textContent = accuracy;
-
-        this.saveManager.clearSave();
-    }
-
-    gameOver() {
-        this.showScreen('gameover-screen');
-
-        document.getElementById('reached-floor').textContent = this.currentFloor;
-        document.getElementById('go-total-battles').textContent = this.stats.totalBattles;
-
-        const accuracy = this.stats.totalQuestions > 0
-            ? Math.floor((this.stats.correctAnswers / this.stats.totalQuestions) * 100)
-            : 0;
-        document.getElementById('go-accuracy').textContent = accuracy;
-
-        this.saveManager.clearSave();
-    }
-
-    returnToTitle() {
-        this.currentFloor = 1;
-        this.party = [];
-        this.playerPokemon = null;
-        this.stats = {
-            totalBattles: 0,
-            correctAnswers: 0,
-            totalQuestions: 0,
-            badges: 0,
-            potions: 0,
-            balls: 0
-        };
-
         this.showScreen('title-screen');
+        // Load box data just to see? No need yet.
+    }
 
-        // Update continue button visibility
-        if (this.saveManager.hasSaveData()) {
-            document.getElementById('continue-btn').style.display = 'block';
-        } else {
-            document.getElementById('continue-btn').style.display = 'none';
-        }
+    bindEvents() {
+        // Title
+        document.getElementById('mode-training-btn').onclick = () => this.startTrainingSetup();
+        document.getElementById('mode-gym-btn').onclick = () => this.startGymSetup();
+
+        // Starter
+        document.querySelectorAll('.starter-card').forEach(card => {
+            card.onclick = () => this.selectStarter(parseInt(card.dataset.id));
+        });
+
+        // Gym Party
+        document.getElementById('start-gym-run-btn').onclick = () => this.startGymRun();
+
+        // Dungeon Controls
+        document.getElementById('btn-up').onclick = () => this.dungeon && this.dungeon.movePlayer(0, -1);
+        document.getElementById('btn-down').onclick = () => this.dungeon && this.dungeon.movePlayer(0, 1);
+        document.getElementById('btn-left').onclick = () => this.dungeon && this.dungeon.movePlayer(-1, 0);
+        document.getElementById('btn-right').onclick = () => this.dungeon && this.dungeon.movePlayer(1, 0);
+
+        // Key Controls
+        window.addEventListener('keydown', (e) => {
+            if (this.currentScreen === 'dungeon-screen' && this.dungeon && !this.dungeon.inputLocked) {
+                if (e.key === 'ArrowUp') this.dungeon.movePlayer(0, -1);
+                if (e.key === 'ArrowDown') this.dungeon.movePlayer(0, 1);
+                if (e.key === 'ArrowLeft') this.dungeon.movePlayer(-1, 0);
+                if (e.key === 'ArrowRight') this.dungeon.movePlayer(1, 0);
+            }
+        });
     }
 
     showScreen(screenId) {
-        // Hide all screens
-        document.querySelectorAll('.screen').forEach(screen => {
-            screen.classList.remove('active');
-        });
-
-        // Show target screen
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
         this.currentScreen = screenId;
     }
 
-    autoSave() {
-        if (this.playerPokemon) {
-            this.saveManager.save({
-                playerPokemon: this.playerPokemon,
-                currentFloor: this.currentFloor,
-                dungeonSeed: this.dungeonSeed,
-                stats: this.stats
+    // --- Training Mode Flow ---
+
+    startTrainingSetup() {
+        this.mode = 'training';
+        this.showScreen('starter-screen');
+
+        // Draw Starter Sprites
+        setTimeout(() => {
+            document.querySelectorAll('.starter-sprite-canvas').forEach(canvas => {
+                const id = parseInt(canvas.dataset.id);
+                if (window.spriteLoader) {
+                    spriteLoader.drawToCanvas(canvas, id);
+                }
             });
-        }
+        }, 100);
     }
 
-    showDungeonMessage(text) {
-        const log = document.getElementById('dungeon-message-log');
-        if (log) {
-            log.textContent = text;
-            log.style.display = 'block';
+    selectStarter(id) {
+        // Create new starter or load? Currently always new for Training
+        // Spec says: "Starter levels are maintained".
+        // So we should check if this starter exists in Box first.
+        const box = this.saveManager.getBox();
+        const existingInfo = box.find(p => {
+            // Basic starter lineage check
+            if (id === 1 && [1, 2, 3].includes(p.id)) return true;
+            if (id === 4 && [4, 5, 6].includes(p.id)) return true;
+            if (id === 7 && [7, 8, 9].includes(p.id)) return true;
+            return false;
+        });
 
-            // Clear previous timeout if exists
-            if (this.messageTimeout) clearTimeout(this.messageTimeout);
-
-            this.messageTimeout = setTimeout(() => {
-                log.style.display = 'none';
-            }, 3000);
-        }
-    }
-
-    loadGame() {
-        const saveData = this.saveManager.load();
-
-        if (saveData) {
-            this.playerPokemon = saveData.playerPokemon;
-            this.currentFloor = saveData.currentFloor;
-            this.dungeonSeed = saveData.dungeonSeed;
-            this.stats = saveData.stats;
-
-            this.startDungeon();
+        if (existingInfo) {
+            // Load existing
+            this.playerPokemon = new Pokemon(existingInfo.id, existingInfo.level);
+            this.playerPokemon.hp = this.playerPokemon.maxHp;
+            this.playerPokemon.exp = existingInfo.exp;
+            this.playerPokemon.moves = existingInfo.moves;
+            // Recalc stats just in case
+            this.playerPokemon.levelUp(); this.playerPokemon.level--; // Hack to refresh stats? Or just Constructor does it. Constructor does it.
+            alert(`${this.playerPokemon.name} (Lv.${this.playerPokemon.level}) がボックスから帰ってきた！`);
         } else {
-            alert('セーブデータの読み込みに失敗しました');
+            // New
+            this.playerPokemon = new Pokemon(id, 5);
+        }
+
+        this.party = [this.playerPokemon]; // Init party for switching
+        this.currentFloor = 1;
+        this.startDungeonFloor();
+    }
+
+    startDungeonFloor() {
+        this.showScreen('dungeon-screen');
+        // Init dungeon
+        this.dungeon = new Dungeon(this, this.currentFloor);
+        this.updateDungeonUI();
+    }
+
+    updateDungeonUI() {
+        if (!this.playerPokemon) return;
+        document.getElementById('player-name').innerText = this.playerPokemon.name;
+        document.getElementById('player-level').innerText = this.playerPokemon.level;
+        document.getElementById('floor-display').innerText = this.currentFloor + '/9F';
+
+        const hpPct = (this.playerPokemon.hp / this.playerPokemon.maxHp) * 100;
+        document.getElementById('d-hp-fill').style.width = hpPct + '%';
+        document.getElementById('player-hp-text').innerText = `${this.playerPokemon.hp}/${this.playerPokemon.maxHp}`;
+
+        // Sprite
+        const cvs = document.getElementById('dungeon-status-canvas');
+        if (window.spriteLoader) {
+            spriteLoader.drawToCanvas(cvs, this.playerPokemon.id);
+        }
+
+        // Items
+        document.getElementById('d-potion-count').innerText = `${this.items.potions}/${this.items.maxPotions}`;
+        document.getElementById('d-ball-count').innerText = `${this.items.balls}/${this.items.maxBalls}`;
+    }
+
+    openSwitchMenu() {
+        const overlay = document.getElementById('switch-overlay');
+        const list = document.getElementById('switch-list');
+        list.innerHTML = '';
+
+        this.party.forEach((p, i) => {
+            const row = document.createElement('div');
+            row.style.background = '#333';
+            row.style.padding = '8px';
+            row.style.cursor = 'pointer';
+            row.style.display = 'flex';
+            row.style.alignItems = 'center';
+            row.style.gap = '10px';
+            row.style.border = '1px solid #555';
+
+            // Tiny Canvas for sprite
+            const canv = document.createElement('canvas');
+            canv.width = 30; canv.height = 30;
+            if (window.spriteLoader) spriteLoader.drawToCanvas(canv, p.id);
+
+            const info = document.createElement('div');
+            info.innerHTML = `<div>${p.name} Lv.${p.level}</div><div style="font-size:10px; color:#aaa;">HP: ${p.hp}/${p.maxHp}</div>`;
+
+            row.appendChild(canv);
+            row.appendChild(info);
+            row.onclick = () => this.switchLeader(i);
+            list.appendChild(row);
+        });
+
+        overlay.style.display = 'flex';
+    }
+
+    switchLeader(index) {
+        if (this.party[index].hp <= 0) {
+            alert("瀕死のポケモンには交代できません！");
+            return;
+        }
+        this.playerPokemon = this.party[index];
+        this.updateDungeonUI();
+        document.getElementById('switch-overlay').style.display = 'none';
+
+        // Also update Dungeon render immediately to show new sprite (though loop does it)
+        if (this.dungeon) this.dungeon.render();
+    }
+
+    usePotionInDungeon() {
+        if (this.items.potions <= 0) {
+            alert("傷薬を持っていません！");
+            return;
+        }
+        if (this.playerPokemon.hp >= this.playerPokemon.maxHp) {
+            alert("HPは満タンです！");
+            return;
+        }
+
+        const healAmount = Math.floor(this.playerPokemon.maxHp / 2);
+        this.playerPokemon.heal(healAmount);
+        this.items.potions--;
+        this.updateDungeonUI();
+
+        const msgLog = document.getElementById('dungeon-message');
+        msgLog.innerText = `傷薬を使った！ HPが${healAmount}回復した！`;
+
+        // Clear message after delay
+        setTimeout(() => {
+            msgLog.innerText = '';
+        }, 2000);
+    }
+
+    // Called when 9F Gatekeeper defeated or stairs used
+    onComponentsCleared() {
+        // If Training Mode 9F cleared -> Victory -> Save to box -> Title
+        if (this.mode === 'training' && this.currentFloor === 9) {
+            this.completeTrainingRun();
+        } else {
+            this.currentFloor++;
+            this.startDungeonFloor();
+        }
+    }
+
+    completeTrainingRun() {
+        alert('ダンジョン踏破！おめでとう！');
+        this.saveToBox();
+        this.showScreen('result-screen');
+        document.getElementById('result-content').innerText = `${this.playerPokemon.name} は Lv.${this.playerPokemon.level} に成長してボックスに戻った！`;
+    }
+
+    onTrainingGameOver() {
+        // Starter persists rule
+        // Save state (Level, Exp) back to box?
+        // Spec: "Starter levels are maintained even after game over"
+        // So yes, we save.
+        if (this.mode === 'training') {
+            alert('力尽きてしまった... (しかし経験値は引き継がれます)');
+            this.saveToBox();
+            this.showScreen('title-screen');
+        } else {
+            // Gym Mode Loss
+            alert('目の前が真っ暗になった...');
+            this.showScreen('title-screen');
+        }
+    }
+
+    saveToBox() {
+        // Only if it's a starter or we want to save captured ones (not impld yet)
+        this.saveManager.saveToBox(this.playerPokemon);
+    }
+
+    // --- Gym Mode Flow ---
+
+    startGymSetup() {
+        this.mode = 'gym';
+        this.box = this.saveManager.getBox();
+        this.party = [];
+        this.renderPartySelect();
+        this.showScreen('party-select-screen');
+    }
+
+    renderPartySelect() {
+        // Box
+        const boxGrid = document.getElementById('box-grid');
+        boxGrid.innerHTML = '';
+        this.box.forEach((pData, idx) => {
+            const slot = document.createElement('div');
+            slot.className = 'box-slot';
+            slot.innerText = POKEMON_DATA[pData.id].emoji;
+            slot.onclick = () => this.moveToParty(idx);
+            // Highlight if in party? No, move removes from view or dims
+            boxGrid.appendChild(slot);
+        });
+
+        // Party
+        const partyList = document.getElementById('party-list');
+        partyList.innerHTML = '';
+        this.party.forEach((p, idx) => {
+            const slot = document.createElement('div');
+            slot.className = 'party-slot';
+            slot.innerHTML = `<span>${POKEMON_DATA[p.id].emoji} Lv.${p.level}</span> <small>${POKEMON_DATA[p.id].name}</small>`;
+            slot.onclick = () => this.removeFromParty(idx);
+            partyList.appendChild(slot);
+        });
+    }
+
+    moveToParty(boxIdx) {
+        if (this.party.length >= 6) return; // Max 6
+        const pData = this.box[boxIdx]; // Clone?
+        // Instantiate
+        const pokemon = new Pokemon(pData.id, pData.level);
+        pokemon.exp = pData.exp;
+        pokemon.moves = pData.moves;
+
+        this.party.push(pokemon);
+        // Visual update only, don't actually remove from Box persistent data yet
+        // But UI should hide it or prevent duplicate selection?
+        // Let's prevent duplicate select logic simply by ID check if unique
+        // Or simpler: Re-render.
+        this.renderPartySelect();
+    }
+
+    removeFromParty(partyIdx) {
+        this.party.splice(partyIdx, 1);
+        this.renderPartySelect();
+    }
+
+    startGymRun() {
+        if (this.party.length === 0) {
+            alert("ポケモンを選んでください！");
+            return;
+        }
+
+        // Start Boss Rush
+        this.gymStage = 0; // 0 to 8 (8 leaders + Champ?) Spec says 8 + Champ?
+        // Spec says "Gym Battle Mode ... Boss Rush"
+        this.gymLeaders = [153, 154, 155, 156, 157, 158, 159, 160]; // IDs
+
+        this.startGymBattleSequence();
+    }
+
+    startGymBattleSequence() {
+        if (this.gymStage >= this.gymLeaders.length) {
+            alert("殿堂入りおめでとう！(Gym Mode Clear)");
+            this.showScreen('title-screen');
+            return;
+        }
+
+        const leaderId = this.gymLeaders[this.gymStage];
+        this.showDialogue(leaderId, "pre").then(() => {
+            // Start Battle
+            // Player sends first pokemon alive
+            const valid = this.party.find(p => p.hp > 0);
+            if (!valid) {
+                this.onTrainingGameOver();
+                return;
+            }
+            this.playerPokemon = valid;
+
+            // Enemy
+            // Scaling? Or Fixed? Spec didn't specify Gym Level Scaling strictly, 
+            // but Training Mode has rules. Gym probably fixed challenging levels.
+            // Let's say Level = 10 + (Stage * 5)
+            const gymLevel = 10 + (this.gymStage * 5);
+            const enemy = new Pokemon(leaderId, gymLevel); // Using ID produces Pseudo-Pokemon
+
+            this.battleManager.startBattle(this.playerPokemon, enemy, 10); // Floor 10 equivalent?
+        });
+    }
+
+    onGymVictory() {
+        // Called by BattleManager
+        const leaderId = this.gymLeaders[this.gymStage];
+        this.showDialogue(leaderId, "post").then(() => {
+            this.gymStage++;
+            // Heal party? "Boss Rush" usually implies limited healing?
+            // Let's heal fully for MVP to be nice.
+            // this.party.forEach(p => p.heal(9999)); 
+            // Actually, keep damage for challenge? Spec didn't say.
+            // Let's Keep damage.
+            this.startGymBattleSequence();
+        });
+    }
+
+    showDialogue(leaderId, type) {
+        return new Promise(resolve => {
+            const overlay = document.getElementById('dialogue-overlay');
+            const nameEl = document.getElementById('dialogue-speaker');
+            const textEl = document.getElementById('dialogue-text');
+            const nextEl = document.querySelector('.dialogue-next');
+
+            overlay.style.display = 'flex';
+
+            const leaderName = POKEMON_DATA[leaderId].name;
+            nameEl.innerText = leaderName;
+
+            let text = "";
+            if (type === "pre") text = `I am ${leaderName}. Are you ready to test your English skills?`;
+            else text = `Impressive! You have mastered this level. Proceed!`;
+
+            textEl.innerText = text;
+
+            const clickHandler = () => {
+                overlay.style.display = 'none';
+                overlay.removeEventListener('click', clickHandler);
+                resolve();
+            };
+            overlay.addEventListener('click', clickHandler);
+        });
+    }
+
+    // API for BattleManager to Switch Pokemon
+    switchPokemonInBattle() {
+        const currentIdx = this.party.indexOf(this.playerPokemon);
+        const next = this.party.find((p, i) => i > currentIdx && p.hp > 0);
+        if (next) {
+            this.playerPokemon = next;
+            return next;
+        }
+        return null;
+    }
+
+    // --- Battle Callbacks ---
+
+    endBattle(won) {
+        this.showScreen('dungeon-screen');
+        if (this.dungeon) {
+            this.dungeon.resumeFromBattle(won);
         }
     }
 }
 
-// Start game when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    new Game();
-});
+// Global instance
+let game;
+window.onload = () => {
+    game = new Game();
+};

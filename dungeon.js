@@ -15,70 +15,60 @@ function getTheme(floor) {
 }
 
 class Dungeon {
-    constructor(floor, seed) {
+    constructor(gameInstance, floor) {
+        this.game = gameInstance;
         this.floor = floor;
-        this.seed = seed;
         this.width = 30; // 30x20
         this.height = 20;
         this.map = [];
         this.rooms = [];
-        this.items = []; // Potions
-        this.enemies = []; // Visible enemies
+        this.fieldItems = []; // {x, y, type: 'potion'|'ball'}
+        this.enemies = []; // Visible enemies & Gatekeeper
         this.playerX = 1;
         this.playerY = 1;
+        this.playerDirection = 'down'; // Track facing direction
         this.stairsX = 0;
         this.stairsY = 0;
-        this.turnCount = 0; // Track turns for enemy movement
+        this.gatekeeper = null; // Spec: 9F Gatekeeper
+
+        this.inputLocked = false;
+        this.turnCount = 0;
 
         this.tileset = new Image();
         this.tileset.src = 'map_tiles.png';
         this.tileset.onload = () => {
-            const canvas = document.getElementById('dungeon-canvas');
-            if (canvas) this.draw(canvas.getContext('2d'), canvas.width, canvas.height);
+            this.render();
         };
 
         this.generate();
     }
 
-    // Simple seeded random number generator
-    seededRandom() {
-        this.seed = (this.seed * 9301 + 49297) % 233280;
-        return this.seed / 233280;
-    }
-
     generate() {
-        // Initialize map with walls
+        // Reset Map
         for (let y = 0; y < this.height; y++) {
             this.map[y] = [];
             for (let x = 0; x < this.width; x++) {
-                this.map[y][x] = 1; // 1 = wall, 0 = floor
+                this.map[y][x] = 1; // Wall
             }
         }
 
-        this.placeRooms();
-        this.connectRooms();
-        this.spawnItems();
-        this.spawnEnemies();
-    }
-
-    placeRooms() {
-        const minRooms = 5;
-        const maxRooms = 10;
-        const roomCount = Math.floor(this.seededRandom() * (maxRooms - minRooms + 1)) + minRooms;
+        // Rooms
+        const roomCount = Math.floor(Math.random() * 5) + 5; // 5-10
+        this.rooms = [];
 
         for (let i = 0; i < roomCount; i++) {
-            const w = Math.floor(this.seededRandom() * 6) + 4; // 4-9
-            const h = Math.floor(this.seededRandom() * 6) + 4;
-            const x = Math.floor(this.seededRandom() * (this.width - w - 2)) + 1;
-            const y = Math.floor(this.seededRandom() * (this.height - h - 2)) + 1;
+            const w = Math.floor(Math.random() * 6) + 4;
+            const h = Math.floor(Math.random() * 6) + 4;
+            const x = Math.floor(Math.random() * (this.width - w - 2)) + 1;
+            const y = Math.floor(Math.random() * (this.height - h - 2)) + 1;
 
             const newRoom = { x, y, w, h };
 
-            // Check overlap with existing rooms (with a 1-tile buffer)
+            // Overlap check
             let overlap = false;
-            for (const room of this.rooms) {
-                if (newRoom.x < room.x + room.w + 1 && newRoom.x + newRoom.w + 1 > room.x &&
-                    newRoom.y < room.y + room.h + 1 && newRoom.y + newRoom.h + 1 > room.y) {
+            for (const r of this.rooms) {
+                if (x < r.x + r.w + 1 && x + w + 1 > r.x &&
+                    y < r.y + r.h + 1 && y + h + 1 > r.y) {
                     overlap = true;
                     break;
                 }
@@ -87,19 +77,31 @@ class Dungeon {
             if (!overlap) {
                 this.createRoom(newRoom);
                 this.rooms.push(newRoom);
-
-                // Place player in the center of the first room
                 if (this.rooms.length === 1) {
-                    this.playerX = Math.floor(newRoom.x + newRoom.w / 2);
-                    this.playerY = Math.floor(newRoom.y + newRoom.h / 2);
+                    this.playerX = Math.floor(x + w / 2);
+                    this.playerY = Math.floor(y + h / 2);
                 }
             }
         }
 
-        // Place stairs in the center of the last room
+        this.connectRooms();
+
+        // Stairs in Last Room
         const lastRoom = this.rooms[this.rooms.length - 1];
         this.stairsX = Math.floor(lastRoom.x + lastRoom.w / 2);
         this.stairsY = Math.floor(lastRoom.y + lastRoom.h / 2);
+
+        // Populate
+        this.spawnEnemies();
+        this.spawnItems();
+
+        // Spec: 9F Gatekeeper
+        if (this.floor === 9) {
+            this.spawnGatekeeper();
+        }
+
+        // Initial Render
+        this.render();
     }
 
     createRoom(room) {
@@ -112,21 +114,19 @@ class Dungeon {
 
     connectRooms() {
         for (let i = 0; i < this.rooms.length - 1; i++) {
-            const roomA = this.rooms[i];
-            const roomB = this.rooms[i + 1];
+            const rA = this.rooms[i];
+            const rB = this.rooms[i + 1];
+            const x1 = Math.floor(rA.x + rA.w / 2);
+            const y1 = Math.floor(rA.y + rA.h / 2);
+            const x2 = Math.floor(rB.x + rB.w / 2);
+            const y2 = Math.floor(rB.y + rB.h / 2);
 
-            const x1 = Math.floor(roomA.x + roomA.w / 2);
-            const y1 = Math.floor(roomA.y + roomA.h / 2);
-            const x2 = Math.floor(roomB.x + roomB.w / 2);
-            const y2 = Math.floor(roomB.y + roomB.h / 2);
-
-            // Random choice: horizontal then vertical, or vice versa
-            if (this.seededRandom() > 0.5) {
-                this.createTunnel(x1, x2, y1, true); // Horizontal
-                this.createTunnel(y1, y2, x2, false); // Vertical
+            if (Math.random() > 0.5) {
+                this.createTunnel(x1, x2, y1, true);
+                this.createTunnel(y1, y2, x2, false);
             } else {
-                this.createTunnel(y1, y2, x1, false); // Vertical
-                this.createTunnel(x1, x2, y2, true); // Horizontal
+                this.createTunnel(y1, y2, x1, false);
+                this.createTunnel(x1, x2, y2, true);
             }
         }
     }
@@ -134,277 +134,447 @@ class Dungeon {
     createTunnel(start, end, fixed, horizontal) {
         const min = Math.min(start, end);
         const max = Math.max(start, end);
-
         for (let i = min; i <= max; i++) {
-            if (horizontal) {
-                if (fixed >= 0 && fixed < this.height && i >= 0 && i < this.width) {
-                    this.map[fixed][i] = 0;
-                }
-            } else {
-                if (i >= 0 && i < this.height && fixed >= 0 && fixed < this.width) {
-                    this.map[i][fixed] = 0;
-                }
-            }
+            if (horizontal) this.map[fixed][i] = 0;
+            else this.map[i][fixed] = 0;
+        }
+    }
+
+    spawnGatekeeper() {
+        this.gatekeeper = {
+            x: this.stairsX,
+            y: this.stairsY,
+            id: 149, // Dragonite
+            isBoss: true
+        };
+        // Remove normal enemy if generated there
+        this.enemies = this.enemies.filter(e => e.x !== this.stairsX || e.y !== this.stairsY);
+        this.enemies.push(this.gatekeeper);
+    }
+
+    spawnEnemies() {
+        const count = 3 + Math.floor(this.floor / 2);
+        for (let i = 0; i < count; i++) {
+            const r = this.rooms[Math.floor(Math.random() * this.rooms.length)];
+            const x = Math.floor(r.x + 1 + Math.random() * (r.w - 2));
+            const y = Math.floor(r.y + 1 + Math.random() * (r.h - 2));
+
+            if (this.map[y][x] === 1) continue;
+            if (x === this.playerX && y === this.playerY) continue;
+            if (x === this.stairsX && y === this.stairsY) continue;
+            if (Math.abs(x - this.playerX) + Math.abs(y - this.playerY) < 5) continue;
+
+            this.enemies.push({
+                x, y,
+                id: getEnemyForFloor(this.floor)
+            });
         }
     }
 
     spawnItems() {
-        const itemCount = 1 + Math.floor(this.seededRandom() * 2); // 1-2 items
-        for (let i = 0; i < itemCount; i++) {
-            const room = this.rooms[Math.floor(this.seededRandom() * this.rooms.length)];
-            const x = Math.floor(room.x + 1 + this.seededRandom() * (room.w - 2));
-            const y = Math.floor(room.y + 1 + this.seededRandom() * (room.h - 2));
+        // Spawn 2 Potions and 2 Balls per floor
+        this.fieldItems = [];
+        const itemsToSpawn = [
+            { type: 'potion' },
+            { type: 'potion' },
+            { type: 'ball' },
+            { type: 'ball' }
+        ];
 
-            // Avoid overlap with player, stairs, and other items
-            if ((x === this.playerX && y === this.playerY) ||
-                (x === this.stairsX && y === this.stairsY) ||
-                this.items.some(item => item.x === x && item.y === y)) {
-                i--; // Retry placing this item
-                continue;
-            }
+        for (const item of itemsToSpawn) {
+            let attempts = 0;
+            while (attempts < 50) {
+                const r = this.rooms[Math.floor(Math.random() * this.rooms.length)];
+                const x = Math.floor(r.x + 1 + Math.random() * (r.w - 2));
+                const y = Math.floor(r.y + 1 + Math.random() * (r.h - 2));
 
-            const type = this.seededRandom() > 0.5 ? 'potion' : 'ball';
-            this.items.push({ x, y, type: type });
-        }
-    }
+                if (this.map[y][x] === 1) { attempts++; continue; }
+                if (this.isOccupied(x, y)) { attempts++; continue; }
+                if (x === this.playerX && y === this.playerY) { attempts++; continue; }
+                if (x === this.stairsX && y === this.stairsY) { attempts++; continue; }
+                // Check if item already exists at this position
+                if (this.fieldItems.some(fi => fi.x === x && fi.y === y)) { attempts++; continue; }
 
-    spawnEnemies() {
-        const enemyCount = 3 + Math.floor(this.floor / 3); // More enemies deeper
-        const maxAttempts = 50; // Prevent infinite loops if map is too small/crowded
-
-        for (let i = 0; i < enemyCount; i++) {
-            let placed = false;
-            for (let attempt = 0; attempt < maxAttempts; attempt++) {
-                const room = this.rooms[Math.floor(this.seededRandom() * this.rooms.length)];
-                const x = Math.floor(room.x + 1 + this.seededRandom() * (room.w - 2));
-                const y = Math.floor(room.y + 1 + this.seededRandom() * (room.h - 2));
-
-                // Ensure it's a floor tile
-                if (this.map[y][x] === 1) continue;
-
-                // Avoid overlap with player, stairs, items, and other enemies
-                if ((x === this.playerX && y === this.playerY) ||
-                    (x === this.stairsX && y === this.stairsY) ||
-                    this.items.some(item => item.x === x && item.y === y) ||
-                    this.enemies.some(enemy => enemy.x === x && enemy.y === y)) {
-                    continue;
-                }
-
-                // Keep some distance from player initially
-                if (Math.abs(x - this.playerX) + Math.abs(y - this.playerY) < 5) {
-                    continue;
-                }
-
-                this.enemies.push({ x, y, id: getEnemyForFloor(this.floor) }); // Store ID if needed? Or just generic.
-                placed = true;
+                this.fieldItems.push({ x, y, type: item.type });
                 break;
-            }
-            if (!placed) {
-                // console.warn("Could not place all enemies.");
-                break; // Stop trying if placement is too difficult
             }
         }
     }
 
     movePlayer(dx, dy) {
-        const newX = this.playerX + dx;
-        const newY = this.playerY + dy;
+        if (this.inputLocked) return;
 
-        if (newX < 0 || newX >= this.width || newY < 0 || newY >= this.height) return null;
-        if (this.map[newY][newX] === 1) return null; // Wall
+        const nx = this.playerX + dx;
+        const ny = this.playerY + dy;
 
-        // Check Enemy Collision
-        const enemyIndex = this.enemies.findIndex(e => e.x === newX && e.y === newY);
-        if (enemyIndex !== -1) {
-            this.enemies.splice(enemyIndex, 1);
-            return 'encounter';
+        // Wall
+        if (nx < 0 || nx >= this.width || ny < 0 || ny >= this.height) return;
+        if (this.map[ny][nx] === 1) return;
+
+        // Enemy Collision
+        const enemy = this.enemies.find(e => e.x === nx && e.y === ny);
+        if (enemy) {
+            this.startBattle(enemy);
+            return;
         }
 
-        this.playerX = newX;
-        this.playerY = newY;
-        this.turnCount++;
+        this.playerX = nx;
+        this.playerY = ny;
 
-        // Stairs
+        // Track direction for sprite rendering
+        if (dx > 0) this.playerDirection = 'right';
+        else if (dx < 0) this.playerDirection = 'left';
+        else if (dy > 0) this.playerDirection = 'down';
+        else if (dy < 0) this.playerDirection = 'up';
+
+        // Item Pickup
+        const itemIdx = this.fieldItems.findIndex(i => i.x === nx && i.y === ny);
+        if (itemIdx >= 0) {
+            const item = this.fieldItems[itemIdx];
+            const msgLog = document.getElementById('dungeon-message');
+            if (item.type === 'potion') {
+                if (this.game.items.potions < this.game.items.maxPotions) {
+                    this.game.items.potions++;
+                    msgLog.innerText = "傷薬を手に入れた！";
+                    this.fieldItems.splice(itemIdx, 1);
+                } else {
+                    msgLog.innerText = "傷薬はもう持てない！";
+                }
+            } else if (item.type === 'ball') {
+                if (this.game.items.balls < this.game.items.maxBalls) {
+                    this.game.items.balls++;
+                    msgLog.innerText = "モンスターボールを手に入れた！";
+                    this.fieldItems.splice(itemIdx, 1);
+                } else {
+                    msgLog.innerText = "モンスターボールはもう持てない！";
+                }
+            }
+            this.game.updateDungeonUI();
+        }
+
+        // Turn Logic
+        this.turnCount = (this.turnCount || 0) + 1;
+
+        // Move Enemies (Every 2 turns)
+        if (this.turnCount % 2 === 0) {
+            const hit = this.moveEnemies();
+            if (hit) return; // Battle started by enemy
+        }
+
+        this.render();
+
+        // Check Stairs
         if (this.playerX === this.stairsX && this.playerY === this.stairsY) {
-            return 'stairs';
+            if (this.gatekeeper && !this.gatekeeperDefeated) {
+                // Should not happen if Gatekeeper is an entity blocking the tile
+            }
+            if (confirm("次の階へ進みますか？")) {
+                this.game.onComponentsCleared();
+            }
         }
-
-        // Items
-        const itemIndex = this.items.findIndex(i => i.x === this.playerX && i.y === this.playerY);
-        if (itemIndex !== -1) {
-            const item = this.items[itemIndex];
-            this.items.splice(itemIndex, 1);
-            return { type: 'item', item: item };
-        }
-
-        // Move Enemies
-        const enemyHit = this.moveEnemies();
-        if (enemyHit) return 'encounter';
-
-        return 'moved';
     }
 
     moveEnemies() {
-        if (this.turnCount % 2 !== 0) return null;
-
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const e = this.enemies[i];
+            if (e.isBoss) continue; // Boss doesn't move
 
+            // Simple Axis movement towards player
             const dx = Math.sign(this.playerX - e.x);
             const dy = Math.sign(this.playerY - e.y);
 
             let moved = false;
+            let nx = e.x;
+            let ny = e.y;
 
-            // Try major axis
+            // Try X then Y
             if (Math.abs(this.playerX - e.x) >= Math.abs(this.playerY - e.y)) {
-                if (dx !== 0 && this.map[e.y][e.x + dx] !== 1) {
-                    e.x += dx;
+                if (dx !== 0 && this.map[e.y][e.x + dx] !== 1 && !this.isOccupied(e.x + dx, e.y)) {
+                    nx += dx;
                     moved = true;
-                } else if (dy !== 0 && this.map[e.y + dy][e.x] !== 1) {
-                    e.y += dy;
+                } else if (dy !== 0 && this.map[e.y + dy][e.x] !== 1 && !this.isOccupied(e.x, e.y + dy)) {
+                    ny += dy;
                     moved = true;
                 }
             } else {
-                if (dy !== 0 && this.map[e.y + dy][e.x] !== 1) {
-                    e.y += dy;
+                if (dy !== 0 && this.map[e.y + dy][e.x] !== 1 && !this.isOccupied(e.x, e.y + dy)) {
+                    ny += dy;
                     moved = true;
-                } else if (dx !== 0 && this.map[e.y][e.x + dx] !== 1) {
-                    e.x += dx;
+                } else if (dx !== 0 && this.map[e.y][e.x + dx] !== 1 && !this.isOccupied(e.x + dx, e.y)) {
+                    nx += dx;
                     moved = true;
                 }
             }
 
+            if (moved) {
+                e.x = nx;
+                e.y = ny;
+            }
+
+            // Check Collision with Player
             if (e.x === this.playerX && e.y === this.playerY) {
-                this.enemies.splice(i, 1);
+                this.startBattle(e);
                 return true;
             }
         }
         return false;
     }
 
-    draw(ctx, width, height) {
-        const tileW = width / this.width;
-        const tileH = height / this.height;
-        // Fix gaps
-        const drawTileW = Math.ceil(tileW);
-        const drawTileH = Math.ceil(tileH);
+    isOccupied(x, y) {
+        // occupied by other enemies?
+        return this.enemies.some(e => e.x === x && e.y === y);
+    }
 
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, width, height);
+    startBattle(enemyEntity) {
+        this.inputLocked = true;
+
+        let enemy;
+        if (enemyEntity.isBoss) {
+            // "先頭ポケモンのレベル + 3"
+            const pLv = this.game.playerPokemon.level;
+            enemy = new Pokemon(enemyEntity.id, pLv + 3);
+            enemy.name = "番人 " + enemy.name;
+        } else {
+            const floorBase = 3 + (this.floor * 3);
+            const pLv = this.game.playerPokemon.level;
+            // User Request: Wild level <= Starter Level - 1
+            let lv = Math.min(floorBase, pLv - 1);
+            if (lv < 1) lv = 1; // Minimum level 1
+
+            enemy = new Pokemon(enemyEntity.id, lv);
+        }
+
+        // Save reference to remove after battle
+        this.interactingEnemy = enemyEntity;
+
+        // Start
+        this.game.battleManager.startBattle(this.game.playerPokemon, enemy, this.floor);
+    }
+
+    resumeFromBattle(won) {
+        this.inputLocked = false;
+        this.game.showScreen('dungeon-screen');
+        if (won && this.interactingEnemy) {
+            this.enemies = this.enemies.filter(e => e !== this.interactingEnemy);
+            if (this.interactingEnemy.isBoss) {
+                this.gatekeeperDefeated = true;
+                this.playerX = this.stairsX;
+                this.playerY = this.stairsY;
+                setTimeout(() => {
+                    this.game.onComponentsCleared();
+                }, 500);
+            }
+            this.interactingEnemy = null;
+        }
+        this.render();
+    }
+
+    render() {
+        const canvas = document.getElementById('dungeon-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+
+        // Settings
+        const TILE_SIZE = 32;
+        const VIEW_W = w;
+        const VIEW_H = h;
+
+        // Calculate Camera Position (Centered on Player)
+        // CameraX is top-left of view
+        let camX = this.playerX * TILE_SIZE - VIEW_W / 2 + TILE_SIZE / 2;
+        let camY = this.playerY * TILE_SIZE - VIEW_H / 2 + TILE_SIZE / 2;
+
+        // Clamp Camera
+        const mapPixelW = this.width * TILE_SIZE;
+        const mapPixelH = this.height * TILE_SIZE;
+
+        camX = Math.max(0, Math.min(camX, mapPixelW - VIEW_W));
+        camY = Math.max(0, Math.min(camY, mapPixelH - VIEW_H));
+
+        // Draw Background
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, w, h);
 
         const theme = getTheme(this.floor);
-        const useTiles = this.tileset && this.tileset.complete && this.tileset.naturalWidth !== 0;
-        const srcS = useTiles ? this.tileset.width / 8 : 32;
 
-        for (let y = 0; y < this.height; y++) {
-            for (let x = 0; x < this.width; x++) {
-                const posX = Math.floor(x * tileW);
-                const posY = Math.floor(y * tileH);
+        // Optimize: Draw only visible tiles
+        const startCol = Math.floor(camX / TILE_SIZE);
+        const endCol = Math.min(this.width, Math.ceil((camX + VIEW_W) / TILE_SIZE));
+        const startRow = Math.floor(camY / TILE_SIZE);
+        const endRow = Math.min(this.height, Math.ceil((camY + VIEW_H) / TILE_SIZE));
 
-                if (this.map[y][x] === 1) { // Wall
-                    if (useTiles) {
-                        // Apply inset to avoid tile border artifacts
-                        const inset = 2; // Crop 2px from each side
-                        ctx.drawImage(this.tileset,
-                            theme.wallTile[0] * srcS + inset, theme.wallTile[1] * srcS + inset, srcS - inset * 2, srcS - inset * 2,
-                            posX, posY, drawTileW, drawTileH
-                        );
-                    } else {
-                        ctx.fillStyle = theme.wall;
-                        ctx.fillRect(posX, posY, drawTileW, drawTileH);
-                    }
-                } else { // Floor
-                    if (useTiles) {
-                        const inset = 2;
-                        ctx.drawImage(this.tileset,
-                            theme.floorTile[0] * srcS + inset, theme.floorTile[1] * srcS + inset, srcS - inset * 2, srcS - inset * 2,
-                            posX, posY, drawTileW, drawTileH
-                        );
-                    } else {
-                        ctx.fillStyle = theme.floor;
-                        ctx.fillRect(posX, posY, drawTileW, drawTileH);
-                    }
+        ctx.save();
+        ctx.translate(-camX, -camY);
+
+        for (let y = startRow; y < endRow; y++) {
+            for (let x = startCol; x < endCol; x++) {
+                const px = x * TILE_SIZE;
+                const py = y * TILE_SIZE;
+
+                if (this.map[y][x] === 1) {
+                    ctx.fillStyle = theme.wall;
+                    ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                    // 3D effect bevel
+                    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                    ctx.fillRect(px, py, TILE_SIZE, 4);
+                    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                    ctx.fillRect(px, py + TILE_SIZE - 4, TILE_SIZE, 4);
+                } else {
+                    ctx.fillStyle = theme.floor;
+                    ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
                 }
             }
         }
 
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const fontSize = Math.floor(tileW * 0.8);
-        ctx.font = `${fontSize}px sans-serif`;
+        ctx.font = '24px serif';
 
-        // Stairs (Down: 0, 3)
-        if (useTiles) {
-            ctx.drawImage(this.tileset,
-                0 * srcS, 3 * srcS, srcS, srcS,
-                Math.floor(this.stairsX * tileW), Math.floor(this.stairsY * tileH), drawTileW, drawTileH
-            );
-        } else {
-            ctx.fillText('🪜', this.stairsX * tileW + tileW / 2, this.stairsY * tileH + tileH / 2);
+        // Stairs
+        if (!(this.gatekeeper && !this.gatekeeperDefeated)) {
+            const sx = this.stairsX * TILE_SIZE + TILE_SIZE / 2;
+            const sy = this.stairsY * TILE_SIZE + TILE_SIZE / 2;
+            ctx.fillText('🪜', sx, sy);
         }
 
         // Items
-        this.items.forEach(item => {
-            if (useTiles) {
-                // Potion: 0, 2; Ball: 1, 2
-                const tileX = item.type === 'potion' ? 0 : 1;
-                const tileY = 2;
-                ctx.drawImage(this.tileset,
-                    tileX * srcS, tileY * srcS, srcS, srcS,
-                    Math.floor(item.x * tileW), Math.floor(item.y * tileH), drawTileW, drawTileH
-                );
-            } else {
-                const icon = item.type === 'potion' ? '💊' : '🔴';
-                ctx.fillText(icon, item.x * tileW + tileW / 2, item.y * tileH + tileH / 2);
+        ctx.fillStyle = '#fff';
+        ctx.font = '20px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        this.fieldItems.forEach(i => {
+            if (i.x >= startCol && i.x < endCol && i.y >= startRow && i.y < endRow) {
+                const ix = i.x * TILE_SIZE + TILE_SIZE / 2;
+                const iy = i.y * TILE_SIZE + TILE_SIZE / 2;
+                ctx.fillText(i.type === 'potion' ? '💊' : '⚾', ix, iy);
             }
         });
 
         // Enemies
-        this.enemies.forEach(enemy => {
-            let icon = '👾';
-            if (typeof POKEMON_DATA !== 'undefined' && POKEMON_DATA[enemy.id] && POKEMON_DATA[enemy.id].emoji) {
-                icon = POKEMON_DATA[enemy.id].emoji;
+        this.enemies.forEach(e => {
+            // Only draw if roughly visible
+            if (e.x >= startCol && e.x < endCol && e.y >= startRow && e.y < endRow) {
+                let icon = POKEMON_DATA[e.id] ? POKEMON_DATA[e.id].emoji : '👾';
+                if (e.isBoss) icon = '👿';
+                const ex = e.x * TILE_SIZE + TILE_SIZE / 2;
+                const ey = e.y * TILE_SIZE + TILE_SIZE / 2;
+                ctx.font = '24px serif';
+                ctx.fillText(icon, ex, ey);
             }
-            ctx.fillText(icon, enemy.x * tileW + tileW / 2, enemy.y * tileH + tileH / 2);
         });
 
-        // Player
-        // User requested easy-to-understand distinct emoji
-        const playerIcon = '🤠'; // Cowboy/Hero
+        // Player - Directional Character (Pattern 1)
+        const px = this.playerX * TILE_SIZE + TILE_SIZE / 2;
+        const py = this.playerY * TILE_SIZE + TILE_SIZE / 2;
 
-        ctx.save();
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = 'yellow'; // Glow effect
-        ctx.fillText(playerIcon, this.playerX * tileW + tileW / 2, this.playerY * tileH + tileH / 2);
+        // Determine direction based on last movement
+        const direction = this.playerDirection || 'down';
+
+        if (direction === 'down') {
+            // Front view
+            ctx.fillStyle = '#2196f3';
+            ctx.fillRect(px - 6, py + 2, 12, 10);
+
+            ctx.fillStyle = '#ffcc80';
+            ctx.beginPath();
+            ctx.arc(px, py - 4, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#f44336';
+            ctx.beginPath();
+            ctx.arc(px, py - 5, 6, Math.PI, 0);
+            ctx.fill();
+            ctx.fillRect(px - 8, py - 5, 16, 2);
+
+            ctx.fillStyle = '#000';
+            ctx.fillRect(px - 3, py - 3, 2, 2);
+            ctx.fillRect(px + 1, py - 3, 2, 2);
+
+            ctx.fillStyle = '#1565c0';
+            ctx.fillRect(px - 4, py + 12, 3, 6);
+            ctx.fillRect(px + 1, py + 12, 3, 6);
+
+        } else if (direction === 'up') {
+            // Back view
+            ctx.fillStyle = '#2196f3';
+            ctx.fillRect(px - 6, py + 2, 12, 10);
+
+            ctx.fillStyle = '#ffcc80';
+            ctx.beginPath();
+            ctx.arc(px, py - 4, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#f44336';
+            ctx.beginPath();
+            ctx.arc(px, py - 6, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#8d6e63';
+            ctx.fillRect(px - 5, py - 1, 10, 2);
+
+            ctx.fillStyle = '#1565c0';
+            ctx.fillRect(px - 4, py + 12, 3, 6);
+            ctx.fillRect(px + 1, py + 12, 3, 6);
+
+        } else if (direction === 'left') {
+            // Left side view
+            ctx.fillStyle = '#2196f3';
+            ctx.fillRect(px - 2, py + 2, 8, 10);
+
+            ctx.fillStyle = '#ffcc80';
+            ctx.beginPath();
+            ctx.arc(px + 1, py - 4, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#f44336';
+            ctx.beginPath();
+            ctx.arc(px + 1, py - 5, 6, Math.PI, 0);
+            ctx.fill();
+            ctx.fillRect(px - 7, py - 5, 10, 2);
+
+            ctx.fillStyle = '#000';
+            ctx.fillRect(px - 1, py - 4, 2, 2);
+
+            ctx.fillStyle = '#ffcc80';
+            ctx.fillRect(px - 3, py - 3, 2, 2);
+
+            ctx.fillStyle = '#1565c0';
+            ctx.fillRect(px - 1, py + 12, 4, 6);
+
+        } else if (direction === 'right') {
+            // Right side view
+            ctx.fillStyle = '#2196f3';
+            ctx.fillRect(px - 6, py + 2, 8, 10);
+
+            ctx.fillStyle = '#ffcc80';
+            ctx.beginPath();
+            ctx.arc(px - 1, py - 4, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#f44336';
+            ctx.beginPath();
+            ctx.arc(px - 1, py - 5, 6, Math.PI, 0);
+            ctx.fill();
+            ctx.fillRect(px - 3, py - 5, 10, 2);
+
+            ctx.fillStyle = '#000';
+            ctx.fillRect(px + 1, py - 4, 2, 2);
+
+            ctx.fillStyle = '#ffcc80';
+            ctx.fillRect(px + 3, py - 3, 2, 2);
+
+            ctx.fillStyle = '#1565c0';
+            ctx.fillRect(px - 3, py + 12, 4, 6);
+        }
+
+        ctx.shadowBlur = 0; // Reset
         ctx.restore();
     }
 }
 
-// Get enemy Pokemon ID based on floor
 function getEnemyForFloor(floor) {
-    const weakPokemon = [16, 19, 10]; // Pidgey, Rattata, Caterpie
-    const midPokemon = [25, 133, 39]; // Pikachu, Eevee, Jigglypuff
-    const evolutions = [2, 5, 8, 17, 20]; // First evolutions
-    const strongPokemon = [26, 38, 65, 6, 9]; // Strong Pokemon
-
-    if (floor <= 2) {
-        return weakPokemon[Math.floor(Math.random() * weakPokemon.length)];
-    } else if (floor <= 4) {
-        return [...weakPokemon, ...midPokemon][Math.floor(Math.random() * 6)];
-    } else if (floor <= 6) {
-        return midPokemon[Math.floor(Math.random() * midPokemon.length)];
-    } else if (floor <= 8) {
-        return evolutions[Math.floor(Math.random() * evolutions.length)];
-    } else {
-        return strongPokemon[Math.floor(Math.random() * strongPokemon.length)];
-    }
-}
-
-// Get enemy level based on floor
-function getEnemyLevel(floor) {
-    if (floor <= 2) return 2 + Math.floor(Math.random() * 3); // 2-4
-    if (floor <= 4) return 5 + Math.floor(Math.random() * 5); // 5-9
-    if (floor <= 6) return 10 + Math.floor(Math.random() * 5); // 10-14
-    if (floor <= 8) return 15 + Math.floor(Math.random() * 5); // 15-19
-    return 20 + Math.floor(Math.random() * 5); // 20-24
+    const pool = [16, 19, 10, 25]; // Simplified
+    return pool[Math.floor(Math.random() * pool.length)];
 }
