@@ -62,28 +62,25 @@
         <div id="dungeon-screen" class="screen" style="position: relative;">
             <div class="message-log" id="dungeon-message-log" style="display: none;"></div>
             <div class="status-bar">
-                <div class="player-info" style="display: flex; align-items: center; gap: 15px;">
-                    <canvas id="dungeon-player-sprite" width="96" height="96"
-                        style="width: 96px; height: 96px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));"></canvas>
+                <div class="player-info">
+                    <canvas id="dungeon-player-sprite" width="96" height="96"></canvas>
                     <div>
-                        <span id="player-name"
-                            style="font-size: 1.2rem; font-weight: bold; display: block; margin-bottom: 5px;">フシギダネ</span>
-                        <span class="level" style="font-size: 1rem;">Lv.<span id="player-level">5</span></span>
+                        <span id="player-name">フシギダネ</span>
+                        <span class="level">Lv.<span id="player-level">5</span></span>
                     </div>
                 </div>
                 <div id="dungeon-ui">
-                    <div style="font-size: 0.9rem; margin-top: 5px;">
+                    <div class="dungeon-stats-row">
                         <span>HP: <span id="dungeon-player-hp"></span>/<span id="dungeon-player-max-hp"></span></span>
-                        <span style="margin-left:10px;">Floor: <span id="floor-display">1</span></span>
-                        <span style="margin-left:10px;">Badges: <span id="badge-count">0</span></span>
+                        <span class="stat-separator">Floor: <span id="floor-display">1</span></span>
+                        <span class="stat-separator">Badges: <span id="badge-count">0</span></span>
                     </div>
-                    <div style="margin-top: 5px; display: flex; align-items: center;">
-                        <button id="dungeon-party-btn" class="pixel-btn"
-                            style="margin-right: 10px; background: #eef;">👥 <span id="party-count">1</span>/6</button>
-                        <button id="dungeon-potion-btn" class="pixel-btn" style="margin-left: 5px;">💊 <span
+                    <div class="dungeon-controls-row">
+                        <button id="dungeon-party-btn" class="pixel-btn party-btn">👥 <span
+                                id="party-count">1</span>/6</button>
+                        <button id="dungeon-potion-btn" class="pixel-btn item-btn">💊 <span
                                 id="dungeon-potion-count">0</span>/3</button>
-                        <button class="pixel-btn" style="margin-left: 5px; cursor: default; background: #ddd;">🔴 <span
-                                id="dungeon-ball-count">5</span>/6</button>
+                        <button class="pixel-btn ball-status-btn">🔴 <span id="dungeon-ball-count">5</span>/6</button>
                     </div>
                 </div>
             </div>
