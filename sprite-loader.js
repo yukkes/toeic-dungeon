@@ -41,8 +41,9 @@ class SpriteLoader {
      * @param {number} dx - Destination x
      * @param {number} dy - Destination y
      * @param {number} scale - Scale factor (default 1)
+     * @param {boolean} smooth - Enable image smoothing (default false)
      */
-    drawSprite(ctx, id, dx, dy, scale = 1) {
+    drawSprite(ctx, id, dx, dy, scale = 1, smooth = false) {
         if (!this.loaded) {
             console.warn('Sprite sheet not loaded yet');
             return;
@@ -51,7 +52,7 @@ class SpriteLoader {
         const pos = this.getSpritePosition(id);
         const size = this.spriteSize * scale;
 
-        ctx.imageSmoothingEnabled = false;
+        ctx.imageSmoothingEnabled = smooth;
         ctx.drawImage(
             this.spriteSheet,
             pos.x, pos.y,
@@ -65,11 +66,13 @@ class SpriteLoader {
      * Draw sprite to canvas element (for UI cards)
      * @param {HTMLCanvasElement} canvas - Canvas element
      * @param {number} id - Pokemon/character ID
+     * @param {boolean} smooth - Enable image smoothing (default false)
      */
-    drawToCanvas(canvas, id) {
+    drawToCanvas(canvas, id, smooth = false) {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        this.drawSprite(ctx, id, 0, 0, 1);
+        const scale = canvas.width / this.spriteSize;
+        this.drawSprite(ctx, id, 0, 0, scale, smooth);
     }
 
     /**

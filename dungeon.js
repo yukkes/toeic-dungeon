@@ -1,5 +1,19 @@
 // Dungeon Generation System
 
+const THEMES = {
+    grass: { floor: '#e8f5e9', wall: '#2e7d32', battleBg: 'linear-gradient(to bottom, #87CEEB 0%, #E0F7FA 50%, #66bb6a 50%, #2e7d32 100%)' },
+    cave: { floor: '#616161', wall: '#212121', battleBg: 'linear-gradient(to bottom, #424242 0%, #212121 100%)' },
+    volcano: { floor: '#5d4037', wall: '#b71c1c', battleBg: 'linear-gradient(to bottom, #d84315 0%, #3e2723 100%)' },
+    sea: { floor: '#e3f2fd', wall: '#0277bd', battleBg: 'linear-gradient(to bottom, #81d4fa 0%, #0277bd 50%, #01579b 100%)' }
+};
+
+function getTheme(floor) {
+    if (floor <= 2) return THEMES.grass;
+    if (floor <= 4) return THEMES.cave;
+    if (floor <= 6) return THEMES.volcano;
+    return THEMES.sea;
+}
+
 class Dungeon {
     constructor(floor, seed) {
         this.floor = floor;
@@ -268,17 +282,22 @@ class Dungeon {
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, width, height);
 
+        const theme = getTheme(this.floor);
+        // Fix gaps by ceil width and overlap
+        const drawTileW = Math.ceil(tileW) + 1;
+        const drawTileH = Math.ceil(tileH) + 1;
+
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
-                const posX = x * tileW;
-                const posY = y * tileH;
+                const posX = Math.floor(x * tileW);
+                const posY = Math.floor(y * tileH);
 
                 if (this.map[y][x] === 1) {
-                    ctx.fillStyle = '#333';
-                    ctx.fillRect(posX, posY, tileW, tileH);
+                    ctx.fillStyle = theme.wall;
+                    ctx.fillRect(posX, posY, drawTileW, drawTileH);
                 } else {
-                    ctx.fillStyle = '#eee';
-                    ctx.fillRect(posX, posY, tileW, tileH);
+                    ctx.fillStyle = theme.floor;
+                    ctx.fillRect(posX, posY, drawTileW, drawTileH);
                 }
             }
         }
@@ -307,13 +326,14 @@ class Dungeon {
         });
 
         // Player
-        let playerIcon = '🧙‍♂️';
-        if (typeof window !== 'undefined' && window.game && window.game.playerPokemon && window.game.playerPokemon.id) {
-            if (typeof POKEMON_DATA !== 'undefined' && POKEMON_DATA[window.game.playerPokemon.id]) {
-                playerIcon = POKEMON_DATA[window.game.playerPokemon.id].emoji || '🧙‍♂️';
-            }
-        }
+        // User requested easy-to-understand distinct emoji
+        const playerIcon = '🤠'; // Cowboy/Hero
+
+        ctx.save();
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = 'yellow'; // Glow effect
         ctx.fillText(playerIcon, this.playerX * tileW + tileW / 2, this.playerY * tileH + tileH / 2);
+        ctx.restore();
     }
 }
 

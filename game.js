@@ -18,7 +18,7 @@ class Game {
             totalQuestions: 0,
             badges: 0,
             potions: 1,
-            balls: 5
+            balls: 0
         };
 
         // Make game globally accessible
@@ -147,6 +147,17 @@ class Game {
     updateDungeonUI() {
         document.getElementById('player-name').textContent = this.playerPokemon.name;
         document.getElementById('player-level').textContent = this.playerPokemon.level;
+
+        const playerSpriteCanvas = document.getElementById('dungeon-player-sprite');
+        if (playerSpriteCanvas) {
+            spriteLoader.drawToCanvas(playerSpriteCanvas, this.playerPokemon.id, true);
+        }
+
+        const hpEl = document.getElementById('dungeon-player-hp');
+        const maxHpEl = document.getElementById('dungeon-player-max-hp');
+        if (hpEl) hpEl.textContent = this.playerPokemon.hp;
+        if (maxHpEl) maxHpEl.textContent = this.playerPokemon.maxHp;
+
         document.getElementById('floor-display').textContent = `${this.currentFloor}F`;
         document.getElementById('badge-count').textContent = this.stats.badges;
         document.getElementById('dungeon-potion-count').textContent = this.stats.potions;
@@ -159,7 +170,7 @@ class Game {
 
     switchLeader() {
         if (this.party.length <= 1) {
-            alert("交代するポケモンがいません！");
+            this.showDungeonMessage("交代するポケモンがいません！");
             return;
         }
 
@@ -168,7 +179,7 @@ class Game {
         this.party.push(first);
         this.playerPokemon = this.party[0];
 
-        alert(`${this.playerPokemon.name}に交代した！`);
+        this.showDungeonMessage(`${this.playerPokemon.name}に交代した！`);
         this.updateDungeonUI();
         // Redraw dungeon to update sprite
         if (this.dungeon) this.dungeon.draw(document.getElementById('dungeon-canvas').getContext('2d'), 640, 480);
@@ -177,9 +188,9 @@ class Game {
     addToParty(pokemon) {
         if (this.party.length < 6) {
             this.party.push(pokemon);
-            alert(`${pokemon.name}が仲間になった！`);
+            this.showDungeonMessage(`${pokemon.name}が仲間になった！`);
         } else {
-            alert(`${pokemon.name}を捕まえたが、手持ちがいっぱいなので逃がした... (PC機能未実装)`);
+            this.showDungeonMessage(`${pokemon.name}を捕まえたが、手持ちがいっぱいなので逃がした... (PC機能未実装)`);
         }
         this.updateDungeonUI();
     }
@@ -188,14 +199,15 @@ class Game {
         if (this.stats.potions > 0) {
             if (this.playerPokemon.hp < this.playerPokemon.maxHp) {
                 this.stats.potions--;
-                this.playerPokemon.heal(20);
+                const healAmount = Math.floor(this.playerPokemon.maxHp / 2);
+                this.playerPokemon.heal(healAmount);
                 this.updateDungeonUI();
-                alert("キズぐすりを つかった！ HPが20かいふくした！");
+                this.showDungeonMessage(`キズぐすりを つかった！ HPが${healAmount}かいふくした！`);
             } else {
-                alert("HPは まんたんだ！");
+                this.showDungeonMessage("HPは まんたんだ！");
             }
         } else {
-            alert("キズぐすりを もっていない！");
+            this.showDungeonMessage("キズぐすりを もっていない！");
         }
     }
 
@@ -224,18 +236,18 @@ class Game {
         if (item.type === 'potion') {
             if (this.stats.potions < 3) {
                 this.stats.potions++;
-                alert("キズぐすりを拾った！");
+                this.showDungeonMessage("キズぐすりを拾った！");
                 this.updateDungeonUI();
             } else {
-                alert("持ち物がいっぱいで拾えない！");
+                this.showDungeonMessage("持ち物がいっぱいで拾えない！");
             }
         } else if (item.type === 'ball') {
             if (this.stats.balls < 5) {
                 this.stats.balls++;
-                alert("モンスターボールを拾った！");
+                this.showDungeonMessage("モンスターボールを拾った！");
                 this.updateDungeonUI();
             } else {
-                alert("持ち物がいっぱいで拾えない！");
+                this.showDungeonMessage("持ち物がいっぱいで拾えない！");
             }
         }
     }
@@ -330,7 +342,7 @@ class Game {
             totalQuestions: 0,
             badges: 0,
             potions: 1,
-            balls: 5
+            balls: 0
         };
 
         this.showScreen('title-screen');
@@ -362,6 +374,21 @@ class Game {
                 dungeonSeed: this.dungeonSeed,
                 stats: this.stats
             });
+        }
+    }
+
+    showDungeonMessage(text) {
+        const log = document.getElementById('dungeon-message-log');
+        if (log) {
+            log.textContent = text;
+            log.style.display = 'block';
+
+            // Clear previous timeout if exists
+            if (this.messageTimeout) clearTimeout(this.messageTimeout);
+
+            this.messageTimeout = setTimeout(() => {
+                log.style.display = 'none';
+            }, 3000);
         }
     }
 

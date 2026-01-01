@@ -59,15 +59,21 @@
         </div>
 
         <!-- Dungeon Screen -->
-        <div id="dungeon-screen" class="screen">
+        <div id="dungeon-screen" class="screen" style="position: relative;">
+            <div class="message-log" id="dungeon-message-log" style="display: none;"></div>
             <div class="status-bar">
-                <div class="player-info">
-                    <span id="player-name">フシギダネ</span>
-                    <span class="level">Lv.<span id="player-level">5</span></span>
+                <div class="player-info" style="display: flex; align-items: center; gap: 15px;">
+                    <canvas id="dungeon-player-sprite" width="96" height="96"
+                        style="width: 96px; height: 96px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));"></canvas>
+                    <div>
+                        <span id="player-name"
+                            style="font-size: 1.2rem; font-weight: bold; display: block;">フシギダネ</span>
+                        <span class="level" style="font-size: 1rem;">Lv.<span id="player-level">5</span></span>
+                    </div>
                 </div>
                 <div id="dungeon-ui">
-                    <div style="font-size: 0.9rem;">
-                        <span id="player-name" style="font-weight:bold;"></span> Lv.<span id="player-level"></span>
+                    <div style="font-size: 0.9rem; margin-top: 5px;">
+                        <span>HP: <span id="dungeon-player-hp"></span>/<span id="dungeon-player-max-hp"></span></span>
                         <span style="margin-left:10px;">Floor: <span id="floor-display">1</span></span>
                         <span style="margin-left:10px;">Badges: <span id="badge-count">0</span></span>
                     </div>
@@ -95,6 +101,9 @@
         <!-- Battle Screen -->
         <div id="battle-screen" class="screen">
             <div class="battle-container">
+                <div class="message-log" id="message-log">
+                    野生のポッポが現れた！
+                </div>
                 <div class="enemy-section">
                     <div class="pokemon-display">
                         <canvas id="enemy-sprite" width="128" height="128"></canvas>
@@ -144,9 +153,6 @@
                 </div>
 
                 <div class="battle-ui">
-                    <div class="message-log" id="message-log">
-                        野生のポッポが現れた！
-                    </div>
 
                     <div class="question-panel" id="question-panel">
                         <div class="question-text" id="question-text">

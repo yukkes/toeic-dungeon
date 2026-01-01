@@ -34,6 +34,13 @@ class BattleManager {
         this.updateBattleUI();
         this.showMessage(`野生の${this.enemyPokemon.name}が現れた！`);
 
+        // Set Background
+        if (typeof getTheme === 'function') {
+            const theme = getTheme(floor);
+            const container = document.querySelector('.battle-container');
+            if (container) container.style.background = theme.battleBg;
+        }
+
         // Draw sprites
         setTimeout(() => {
             spriteLoader.drawToCanvas(
@@ -210,18 +217,24 @@ class BattleManager {
         // Execute turn after a delay
         setTimeout(() => {
             if (choice.correct) {
-                // Auto-select random move
-                const moves = this.playerPokemon.moves;
-                const randomMove = moves[Math.floor(Math.random() * moves.length)];
+                // Auto-select ATTACK move (physical/special)
+                let attackMoves = this.playerPokemon.moves.filter(m => MOVES[m] && MOVES[m].category !== 'status');
+                if (attackMoves.length === 0) attackMoves = this.playerPokemon.moves; // Fallback
+
+                const randomMove = attackMoves[Math.floor(Math.random() * attackMoves.length)];
                 this.executePlayerAttack(randomMove);
             } else {
-                this.showMessage("しっぱい！ こうげき できない！");
-                if (window.game) {
-                    window.game.stats.totalQuestions++;
+                // Incorrect answer -> Use Support Move
+                if (window.game) window.game.stats.totalQuestions++;
+
+                // Find status move (priority) or fallback
+                let statusMoves = this.playerPokemon.moves.filter(m => MOVES[m] && MOVES[m].category === 'status');
+                let moveName = "なきごえ"; // Default fallback
+                if (statusMoves.length > 0) {
+                    moveName = statusMoves[Math.floor(Math.random() * statusMoves.length)];
                 }
-                setTimeout(() => {
-                    this.executeEnemyTurn();
-                }, 1500);
+
+                this.executeSupportMove(moveName);
             }
         }, 1500);
     }
@@ -261,12 +274,45 @@ class BattleManager {
         }, 800);
     }
 
+    executeSupportMove(moveName) {
+        const move = MOVES[moveName];
+        this.showMessage(`${this.playerPokemon.name}の${moveName}！`);
+
+        // Visual shake
+        spriteLoader.animateShake(document.getElementById('enemy-sprite'), this.enemyPokemon.id);
+
+        setTimeout(() => {
+            // Apply effect if method exists
+            if (move && move.effect && this.enemyPokemon.changeStage) {
+                const changed = this.enemyPokemon.changeStage(move.effect.stat, move.effect.amount);
+                if (changed) {
+                    let text = move.effect.amount < 0 ? "さがった！" : "あがった！";
+                    // JP Stat names
+                    const statsJP = { attack: "こうげき", defense: "ぼうぎょ", spAttack: "とくこう", spDefense: "とくぼう", speed: "すばやさ" };
+                    const statName = statsJP[move.effect.stat] || move.effect.stat;
+
+                    this.showMessage(`${this.enemyPokemon.name}の${statName}が${text}`);
+                } else {
+                    this.showMessage("しかし うまくきまらなかった！");
+                }
+            } else {
+                this.showMessage("しかし うまくきまらなかった！");
+            }
+
+            setTimeout(() => {
+                this.executeEnemyTurn();
+            }, 1500);
+        }, 800);
+    }
+
     executeEnemyTurn() {
-        // AI picks random move (simplified)
-        // Ensure enemy has moves? Or just random strings like before?
-        // Let's use simple moves for now to avoid crash
-        const moves = ["たいあたり", "ひっかく", "はたく", "なきごえ"];
-        const moveName = moves[Math.floor(Math.random() * moves.length)];
+        // AI prioritizes attacks
+        let attackMoves = this.enemyPokemon.moves.filter(m => MOVES[m] && MOVES[m].category !== 'status');
+        // If empty (only status moves?), use all moves or fallback
+        if (attackMoves.length === 0) attackMoves = this.enemyPokemon.moves;
+        if (attackMoves.length === 0) attackMoves = ["たいあたり"];
+
+        const moveName = attackMoves[Math.floor(Math.random() * attackMoves.length)];
 
         const result = calculateDamage(this.enemyPokemon, this.playerPokemon, moveName);
 

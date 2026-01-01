@@ -113,6 +113,35 @@ class Pokemon {
         // Moves
         this.moves = [];
         this.initializeMoves();
+
+        // Stat Stages
+        this.stages = { attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0, accuracy: 0, evasion: 0 };
+    }
+
+    changeStage(stat, amount) {
+        if (this.stages[stat] === undefined) return false;
+
+        const oldStage = this.stages[stat];
+        this.stages[stat] = Math.max(-6, Math.min(6, this.stages[stat] + amount));
+
+        return this.stages[stat] !== oldStage;
+    }
+
+    getStatWithStage(statName) {
+        let stat = this[statName];
+        // Handle special cases or generic
+        if (!stat) return 0;
+
+        const stage = this.stages[statName];
+        let multiplier = 1.0;
+
+        if (stage >= 0) {
+            multiplier = (2 + stage) / 2;
+        } else {
+            multiplier = 2 / (2 + Math.abs(stage));
+        }
+
+        return Math.floor(stat * multiplier);
     }
 
     calculateStat(base, level) {
@@ -253,8 +282,12 @@ LEARNSETS[9] = { 1: ["たいあたり", "しっぽをふる", "あわ", "みず�
 // Move database
 const MOVES = {
     "たいあたり": { type: "normal", power: 40, category: "physical" },
+    "なきごえ": { type: "normal", category: "status", effect: { stat: "attack", amount: -1 } },
+    "しっぽをふる": { type: "normal", category: "status", effect: { stat: "defense", amount: -1 } },
     "ひっかく": { type: "normal", power: 40, category: "physical" },
     "はたく": { type: "normal", power: 40, category: "physical" },
+    "にらみつける": { type: "normal", category: "status", effect: { stat: "defense", amount: -1 } },
+    "せいちょう": { type: "normal", category: "status", effect: { stat: "spAttack", amount: 1 } },
     "つるのムチ": { type: "grass", power: 45, category: "physical" },
     "はっぱカッター": { type: "grass", power: 55, category: "physical" },
     "ソーラービーム": { type: "grass", power: 120, category: "special" },
@@ -276,8 +309,17 @@ function calculateDamage(attacker, defender, moveName) {
     if (!move) return 0;
 
     // Determine attack and defense stats
-    const attackStat = move.category === "physical" ? attacker.attack : attacker.spAttack;
-    const defenseStat = move.category === "physical" ? defender.defense : defender.spDefense;
+    // Determine attack and defense stats
+    let attackStat = move.category === "physical" ? attacker.attack : attacker.spAttack;
+    let defenseStat = move.category === "physical" ? defender.defense : defender.spDefense;
+
+    // Apply stages
+    if (attacker.getStatWithStage) {
+        attackStat = attacker.getStatWithStage(move.category === "physical" ? "attack" : "spAttack");
+    }
+    if (defender.getStatWithStage) {
+        defenseStat = defender.getStatWithStage(move.category === "physical" ? "defense" : "spDefense");
+    }
 
     // Base damage calculation
     const levelMod = (2 * attacker.level / 5) + 2;
