@@ -229,6 +229,8 @@ body {
     image-rendering: pixelated;
     width: 100%;
     height: auto;
+    object-fit: contain;
+    aspect-ratio: 1 / 1;
 }
 
 .box-slot:hover {
@@ -784,13 +786,25 @@ canvas#dungeon-canvas {
     .party-layout {
         flex-direction: column;
         height: auto;
-        max-height: 80vh;
+        max-height: 100vh;
+        padding: 10px;
+        gap: 10px;
+        overflow-y: auto;
     }
 
     .box-section,
     .party-section {
         flex: none;
-        min-height: 200px;
+        min-height: auto;
+        padding: 8px;
+    }
+
+    .box-grid {
+        gap: 3px;
+    }
+
+    .party-list {
+        gap: 3px;
     }
 
     /* Gym Leader Grid */

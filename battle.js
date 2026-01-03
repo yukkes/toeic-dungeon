@@ -142,16 +142,16 @@ class BattleManager {
     }
 
 
-    startBattle(player, enemy, floor) {
+    startBattle(player, enemy, floor, gymLeaderId = null) {
         this.playerPokemon = player;
         this.enemyPokemon = enemy;
         this.battleActive = true;
+        this.gymLeaderId = gymLeaderId;
         this.game.showScreen('battle-screen');
 
-        // Draw
+        // Draw player sprite
         if (window.spriteLoader) {
             spriteLoader.drawToCanvas(document.getElementById('player-sprite'), player.id);
-            spriteLoader.drawToCanvas(document.getElementById('enemy-sprite'), enemy.id);
         }
 
         // Initial Question
@@ -159,12 +159,52 @@ class BattleManager {
         this.currentQuestion = getQuestionByFloor(qLevel);
 
         this.updateUI();
-        this.showMessage(`あ！ 野生の ${enemy.name} が飛び出してきた！`);
 
-        // Show Question after brief delay
-        setTimeout(() => {
-            this.prepareTurn();
-        }, 1500);
+        // Gym Leader Introduction Sequence
+        if (this.game.mode === 'gym' && gymLeaderId) {
+            // Hide enemy HP bar initially (will show after Pokemon appears)
+            const enemyStatBox = document.querySelector('.enemy-area .stat-box');
+            if (enemyStatBox) enemyStatBox.style.visibility = 'hidden';
+
+            // Show gym leader sprite first
+            if (window.spriteLoader) {
+                spriteLoader.drawToCanvas(document.getElementById('enemy-sprite'), gymLeaderId);
+            }
+
+            const leaderName = POKEMON_DATA[gymLeaderId].name;
+            this.showMessage(`ジムリーダーの ${leaderName} が 勝負をしかけてきた！`);
+
+            // After delay, show Pokemon send-out
+            setTimeout(() => {
+                this.showMessage(`${leaderName} は ${enemy.name} を 繰り出した！`);
+
+                // Swap to Pokemon sprite
+                setTimeout(() => {
+                    if (window.spriteLoader) {
+                        spriteLoader.drawToCanvas(document.getElementById('enemy-sprite'), enemy.id);
+                    }
+
+                    // Show enemy HP bar now
+                    if (enemyStatBox) enemyStatBox.style.visibility = 'visible';
+
+                    // Start battle after sprite swap
+                    setTimeout(() => {
+                        this.prepareTurn();
+                    }, 800);
+                }, 1000);
+            }, 1500);
+        } else {
+            // Wild Pokemon battle
+            if (window.spriteLoader) {
+                spriteLoader.drawToCanvas(document.getElementById('enemy-sprite'), enemy.id);
+            }
+            this.showMessage(`あ！ 野生の ${enemy.name} が飛び出してきた！`);
+
+            // Show Question after brief delay
+            setTimeout(() => {
+                this.prepareTurn();
+            }, 1500);
+        }
     }
 
     prepareTurn() {

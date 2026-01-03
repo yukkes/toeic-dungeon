@@ -11,7 +11,12 @@ class SaveManager {
     getBox() {
         try {
             const data = localStorage.getItem(this.boxKey);
-            return data ? JSON.parse(data) : [];
+            if (!data) return [];
+
+            // Data is stored as Map object {id: pokemonData}
+            const boxMap = JSON.parse(data);
+            // Convert to array for compatibility
+            return Object.values(boxMap);
         } catch (e) {
             console.error(e);
             return [];
@@ -19,7 +24,17 @@ class SaveManager {
     }
 
     saveToBox(pokemon) {
-        let box = this.getBox();
+        // Load box as Map
+        let boxMap = {};
+        try {
+            const data = localStorage.getItem(this.boxKey);
+            if (data) {
+                boxMap = JSON.parse(data);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
         const starterIds = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
         // Prepare data object
@@ -33,46 +48,36 @@ class SaveManager {
             timestamp: Date.now()
         };
 
-        // Check if starter (Unique rule)
+        // Determine the key for this Pokemon
+        let key;
         if (starterIds.includes(pokemon.id)) {
-            // Find root species (e.g. 1, 2, 3 are Bulbasaur line)
-            // Actually simpler: Just check if any box pokemon is in the same evolution line?
-            // User requested: "御三家はボックスに重複しないようにして"
-            // Let's assume unique by exact ID or Line.
-            // Simplified: Unique by Starter Line.
-            const isBulba = [1, 2, 3].includes(pokemon.id);
-            const isChar = [4, 5, 6].includes(pokemon.id);
-            const isSquirt = [7, 8, 9].includes(pokemon.id);
-
-            const index = box.findIndex(p => {
-                if (isBulba && [1, 2, 3].includes(p.id)) return true;
-                if (isChar && [4, 5, 6].includes(p.id)) return true;
-                if (isSquirt && [7, 8, 9].includes(p.id)) return true;
-                return false;
-            });
-
-            if (index >= 0) {
-                // Overwrite (Update)
-                console.log("Updating starter in box...");
-                box[index] = pData;
-            } else {
-                // Add new if box not full
-                if (box.length < 16) {
-                    box.push(pData);
-                } else {
-                    return false; // Box full
-                }
-            }
+            // Starters: Use evolution line as key
+            if ([1, 2, 3].includes(pokemon.id)) key = 'starter_bulbasaur';
+            else if ([4, 5, 6].includes(pokemon.id)) key = 'starter_charmander';
+            else if ([7, 8, 9].includes(pokemon.id)) key = 'starter_squirtle';
         } else {
-            // Regular Pokemon
-            if (box.length < 16) {
-                box.push(pData);
-            } else {
-                return false;
-            }
+            // Regular Pokemon: Use species ID as key
+            key = `pokemon_${pokemon.id}`;
         }
 
-        localStorage.setItem(this.boxKey, JSON.stringify(box));
+        // Check if we should save this Pokemon
+        const existing = boxMap[key];
+        if (existing) {
+            // Only save if new level is higher
+            if (pokemon.level > existing.level) {
+                console.log(`Updating ${POKEMON_DATA[pokemon.id].name} in box with higher level (${existing.level} -> ${pokemon.level})`);
+                boxMap[key] = pData;
+            } else {
+                console.log(`${POKEMON_DATA[pokemon.id].name} already in box with equal or higher level (${existing.level}), skipping...`);
+                return true; // Don't save lower level
+            }
+        } else {
+            // New Pokemon
+            console.log(`Adding ${POKEMON_DATA[pokemon.id].name} Lv.${pokemon.level} to box`);
+            boxMap[key] = pData;
+        }
+
+        localStorage.setItem(this.boxKey, JSON.stringify(boxMap));
         return true;
     }
 
@@ -130,5 +135,15 @@ class SaveManager {
 
     clearRun() {
         sessionStorage.removeItem(this.saveKey);
+    }
+
+    clearAllData() {
+        // Clear box
+        localStorage.removeItem(this.boxKey);
+        // Clear gym progress
+        localStorage.removeItem('gymProgress');
+        // Clear session data
+        sessionStorage.removeItem(this.saveKey);
+        console.log('All save data cleared');
     }
 }

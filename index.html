@@ -21,6 +21,8 @@
                 <button class="menu-btn pixel-btn" id="mode-gym-btn">ジムバトル (Gym Battle)</button>
                 <div style="height: 20px;"></div>
                 <button class="menu-btn pixel-btn sm" id="continue-btn" style="display:none;">ダンジョン再開</button>
+                <button class="menu-btn pixel-btn sm" id="delete-save-btn"
+                    style="background-color: #ff6666; color: white;">セーブデータ削除</button>
             </div>
         </div>
 
@@ -72,10 +74,14 @@
                     <div id="party-list" class="party-list">
                         <!-- Selected pokemon -->
                     </div>
-                    <button id="start-gym-run-btn" class="pixel-btn action-btn">ジム制覇へ向かう</button>
                 </div>
             </div>
-            <button class="pixel-btn back-btn" onclick="game.showScreen('title-screen')">戻る</button>
+            <div style="display: flex; gap: 10px; padding: 10px 20px;">
+                <button class="pixel-btn back-btn" onclick="game.showScreen('title-screen')"
+                    style="margin: 0; flex: 1;">戻る</button>
+                <button id="start-gym-run-btn" class="pixel-btn action-btn"
+                    style="margin: 0; flex: 1;">ジム制覇へ向かう</button>
+            </div>
         </div>
 
         <!-- Gym Leader Progress Screen -->
@@ -133,8 +139,6 @@
                     <div class="leader-status"></div>
                 </div>
             </div>
-            <button id="start-next-gym-btn" class="pixel-btn action-btn">次のジムリーダーに挑戦</button>
-            <button class="pixel-btn back-btn" onclick="game.showScreen('title-screen')">タイトルへ戻る</button>
         </div>
 
         <!-- Dungeon Screen -->

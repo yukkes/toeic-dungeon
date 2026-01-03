@@ -38,6 +38,7 @@ class Game {
         // Title
         document.getElementById('mode-training-btn').onclick = () => this.startTrainingSetup();
         document.getElementById('mode-gym-btn').onclick = () => this.startGymSetup();
+        document.getElementById('delete-save-btn').onclick = () => this.deleteSaveData();
 
         // Starter
         document.querySelectorAll('.starter-card').forEach(card => {
@@ -46,7 +47,6 @@ class Game {
 
         // Gym Party
         document.getElementById('start-gym-run-btn').onclick = () => this.startGymRun();
-        document.getElementById('start-next-gym-btn').onclick = () => this.startNextGymBattle();
 
         // Dungeon Controls
         document.getElementById('btn-up').onclick = () => this.dungeon && this.dungeon.movePlayer(0, -1);
@@ -277,6 +277,15 @@ class Game {
         this.saveManager.saveToBox(this.playerPokemon);
     }
 
+    deleteSaveData() {
+        if (confirm('すべてのセーブデータを削除しますか？\nこの操作は取り消せません。')) {
+            this.saveManager.clearAllData();
+            alert('セーブデータを削除しました。');
+            // Reload page to reset state
+            location.reload();
+        }
+    }
+
     // --- Gym Mode Flow ---
 
     startGymSetup() {
@@ -300,8 +309,8 @@ class Game {
 
             // Create canvas for sprite
             const canvas = document.createElement('canvas');
-            canvas.width = 64;
-            canvas.height = 64;
+            canvas.width = 96;
+            canvas.height = 96;
             if (window.spriteLoader) {
                 spriteLoader.drawToCanvas(canvas, pData.id);
             }
@@ -480,7 +489,7 @@ class Game {
         // TOEIC Level mapping: Takeshi=2, Kasumi=3, ..., Sakaki=9
         const toeicLevel = this.gymStage + 2;
 
-        this.battleManager.startBattle(this.playerPokemon, enemy, toeicLevel);
+        this.battleManager.startBattle(this.playerPokemon, enemy, toeicLevel, leaderId);
     }
 
     onGymPokemonVictory() {
