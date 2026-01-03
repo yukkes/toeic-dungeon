@@ -398,6 +398,50 @@ class Dungeon {
         this.render();
     }
 
+    drawPokeBall(ctx, x, y, radius) {
+        ctx.save();
+        ctx.translate(x, y);
+
+        // Border style
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 1.5;
+
+        // Top Half (Red)
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, Math.PI, 0);
+        ctx.fillStyle = '#f44336';
+        ctx.fill();
+        ctx.stroke();
+
+        // Bottom Half (White)
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.stroke();
+
+        // Center Band
+        ctx.beginPath();
+        ctx.moveTo(-radius, 0);
+        ctx.lineTo(radius, 0);
+        ctx.stroke();
+
+        // Center Button
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.3, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.stroke();
+
+        // Inner Button
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.15, 0, Math.PI * 2); // Small inner circle
+        ctx.fillStyle = 'rgba(0,0,0,0.5)'; // Slight dark center
+        ctx.fill();
+
+        ctx.restore();
+    }
+
     render() {
         const canvas = document.getElementById('dungeon-canvas');
         if (!canvas) return;
@@ -477,7 +521,11 @@ class Dungeon {
             if (i.x >= startCol && i.x < endCol && i.y >= startRow && i.y < endRow) {
                 const ix = i.x * TILE_SIZE + TILE_SIZE / 2;
                 const iy = i.y * TILE_SIZE + TILE_SIZE / 2;
-                ctx.fillText(i.type === 'potion' ? '💊' : '⚾', ix, iy);
+                if (i.type === 'potion') {
+                    ctx.fillText('💊', ix, iy);
+                } else if (i.type === 'ball') {
+                    this.drawPokeBall(ctx, ix, iy, TILE_SIZE * 0.35);
+                }
             }
         });
 
