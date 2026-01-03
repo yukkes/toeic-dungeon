@@ -34,11 +34,6 @@ class Dungeon {
         this.inputLocked = false;
         this.turnCount = 0;
 
-        this.tileset = new Image();
-        this.tileset.src = 'map_tiles.png';
-        this.tileset.onload = () => {
-            this.render();
-        };
 
         this.resizeCanvas();
         window.addEventListener('resize', () => {
@@ -287,13 +282,24 @@ class Dungeon {
         this.render();
 
         // Check Stairs
+        // Check Stairs
         if (this.playerX === this.stairsX && this.playerY === this.stairsY) {
             if (this.gatekeeper && !this.gatekeeperDefeated) {
-                // Should not happen if Gatekeeper is an entity blocking the tile
+                // If somehow on stairs while Gatekeeper is valid (should be blocked by collision)
+                // Just let it pass to confirm for now, or return?
+                // Logic says: gatekeeper occupies the tile.
             }
-            if (confirm("次の階へ進みますか？")) {
-                this.game.onComponentsCleared();
-            }
+
+            // Render update wait
+            this.inputLocked = true;
+            setTimeout(() => {
+                if (confirm("次の階へ進みますか？")) {
+                    this.game.onComponentsCleared();
+                    // New dungeon instance will be created, unlocking input
+                } else {
+                    this.inputLocked = false;
+                }
+            }, 20);
         }
     }
 
