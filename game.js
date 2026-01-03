@@ -71,18 +71,66 @@ class Game {
         this.currentScreen = screenId;
     }
 
+    getStarterEvolutionLine(id) {
+        if ([1, 2, 3].includes(id)) return 1;
+        if ([4, 5, 6].includes(id)) return 4;
+        if ([7, 8, 9].includes(id)) return 7;
+        return null;
+    }
+
     // --- Training Mode Flow ---
 
     startTrainingSetup() {
         this.mode = 'training';
         this.showScreen('starter-screen');
 
-        // Draw Starter Sprites
+        // Load box to check for evolved starters
+        const box = this.saveManager.getBox();
+
+        // Draw Starter Sprites and update info
         setTimeout(() => {
-            document.querySelectorAll('.starter-sprite-canvas').forEach(canvas => {
-                const id = parseInt(canvas.dataset.id);
-                if (window.spriteLoader) {
-                    spriteLoader.drawToCanvas(canvas, id);
+            document.querySelectorAll('.starter-card').forEach(card => {
+                const baseId = parseInt(card.dataset.id);
+
+                // Find the evolved form in box (if any)
+                const existingInfo = box.find(p => {
+                    if (baseId === 1 && [1, 2, 3].includes(p.id)) return true;
+                    if (baseId === 4 && [4, 5, 6].includes(p.id)) return true;
+                    if (baseId === 7 && [7, 8, 9].includes(p.id)) return true;
+                    return false;
+                });
+
+                // Determine which ID and level to display
+                const displayId = existingInfo ? existingInfo.id : baseId;
+                const displayLevel = existingInfo ? existingInfo.level : 5;
+
+                // Update the card's data-id to the actual Pokemon ID
+                card.dataset.id = displayId;
+
+                // Draw sprite
+                const canvas = card.querySelector('.starter-sprite-canvas');
+                if (canvas && window.spriteLoader) {
+                    spriteLoader.drawToCanvas(canvas, displayId);
+                }
+
+                // Update info text
+                const nameEl = card.querySelector('.starter-name');
+                const levelEl = card.querySelector('.starter-level');
+                const typeArea = card.querySelector('.type-badges');
+
+                if (nameEl && POKEMON_DATA[displayId]) {
+                    nameEl.innerText = POKEMON_DATA[displayId].name;
+                }
+                if (levelEl) {
+                    levelEl.innerText = `Lv.${displayLevel}`;
+                }
+                if (typeArea && POKEMON_DATA[displayId]) {
+                    const data = POKEMON_DATA[displayId];
+                    let html = `<span class="badge ${data.type1}">${data.type1.charAt(0).toUpperCase() + data.type1.slice(1)}</span>`;
+                    if (data.type2) {
+                        html += `<span class="badge ${data.type2}">${data.type2.charAt(0).toUpperCase() + data.type2.slice(1)}</span>`;
+                    }
+                    typeArea.innerHTML = html;
                 }
             });
         }, 100);
@@ -93,12 +141,12 @@ class Game {
         // Spec says: "Starter levels are maintained".
         // So we should check if this starter exists in Box first.
         const box = this.saveManager.getBox();
+        const baseStarterId = this.getStarterEvolutionLine(id);
+
         const existingInfo = box.find(p => {
-            // Basic starter lineage check
-            if (id === 1 && [1, 2, 3].includes(p.id)) return true;
-            if (id === 4 && [4, 5, 6].includes(p.id)) return true;
-            if (id === 7 && [7, 8, 9].includes(p.id)) return true;
-            return false;
+            // Check if this Pokemon is in the same evolution line
+            const pBaseId = this.getStarterEvolutionLine(p.id);
+            return pBaseId === baseStarterId;
         });
 
         if (existingInfo) {
