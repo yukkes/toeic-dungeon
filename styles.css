@@ -879,7 +879,7 @@ canvas#dungeon-canvas {
 
     /* Battle Screen adjustments for iPhone */
     .enemy-area {
-        top: 60px;
+        top: 30px;
     }
 
     #start-next-gym-btn,
