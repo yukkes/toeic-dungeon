@@ -321,8 +321,15 @@ class Game {
     }
 
     saveToBox() {
-        // Only if it's a starter or we want to save captured ones (not impld yet)
-        this.saveManager.saveToBox(this.playerPokemon);
+        // Save all pokemon in party to box
+        if (this.party && this.party.length > 0) {
+            this.party.forEach(p => {
+                this.saveManager.saveToBox(p);
+            });
+        } else if (this.playerPokemon) {
+            // Fallback for just player
+            this.saveManager.saveToBox(this.playerPokemon);
+        }
     }
 
     deleteSaveData() {

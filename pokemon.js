@@ -39,18 +39,25 @@ const POKEMON_DATA = {
 
     // Common
     10: { name: "キャタピー", emoji: "🐛", type1: "bug", type2: null, hp: 45, attack: 30, defense: 35, spAttack: 20, spDefense: 20, speed: 45 },
+    11: { name: "トランセル", emoji: "🐛", type1: "bug", type2: null, hp: 50, attack: 20, defense: 55, spAttack: 25, spDefense: 25, speed: 30 },
+    12: { name: "バタフリー", emoji: "🦋", type1: "bug", type2: "flying", hp: 60, attack: 45, defense: 50, spAttack: 90, spDefense: 80, speed: 70 },
     16: { name: "ポッポ", emoji: "🐦", type1: "normal", type2: "flying", hp: 40, attack: 45, defense: 40, spAttack: 35, spDefense: 35, speed: 56 },
     17: { name: "ピジョン", emoji: "🦅", type1: "normal", type2: "flying", hp: 63, attack: 60, defense: 55, spAttack: 50, spDefense: 50, speed: 71 },
+    18: { name: "ピジョット", emoji: "🦅", type1: "normal", type2: "flying", hp: 83, attack: 80, defense: 75, spAttack: 70, spDefense: 70, speed: 101 },
     19: { name: "コラッタ", emoji: "🐀", type1: "normal", type2: null, hp: 30, attack: 56, defense: 35, spAttack: 25, spDefense: 35, speed: 72 },
+    20: { name: "ラッタ", emoji: "🐀", type1: "normal", type2: null, hp: 55, attack: 81, defense: 60, spAttack: 50, spDefense: 70, speed: 97 },
     25: { name: "ピカチュウ", emoji: "⚡", type1: "electric", type2: null, hp: 35, attack: 55, defense: 40, spAttack: 50, spDefense: 50, speed: 90 },
     26: { name: "ライチュウ", emoji: "⚡", type1: "electric", type2: null, hp: 60, attack: 90, defense: 55, spAttack: 90, spDefense: 80, speed: 110 },
     29: { name: "ニドラン♀", emoji: "🐭", type1: "poison", type2: null, hp: 55, attack: 47, defense: 52, spAttack: 40, spDefense: 40, speed: 41 },
+    30: { name: "ニドリーナ", emoji: "🐭", type1: "poison", type2: null, hp: 70, attack: 62, defense: 67, spAttack: 55, spDefense: 55, speed: 56 },
     31: { name: "ニドクイン", emoji: "🐭", type1: "poison", type2: "ground", hp: 90, attack: 92, defense: 87, spAttack: 75, spDefense: 85, speed: 76 },
     32: { name: "ニドラン♂", emoji: "🐭", type1: "poison", type2: null, hp: 46, attack: 57, defense: 40, spAttack: 40, spDefense: 40, speed: 50 },
+    33: { name: "ニドリーノ", emoji: "🐭", type1: "poison", type2: null, hp: 61, attack: 72, defense: 57, spAttack: 55, spDefense: 55, speed: 65 },
     34: { name: "ニドキング", emoji: "🐭", type1: "poison", type2: "ground", hp: 81, attack: 102, defense: 77, spAttack: 85, spDefense: 75, speed: 85 },
     37: { name: "ロコン", emoji: "🦊", type1: "fire", type2: null, hp: 38, attack: 41, defense: 40, spAttack: 50, spDefense: 65, speed: 65 },
     38: { name: "キュウコン", emoji: "🦊", type1: "fire", type2: null, hp: 73, attack: 76, defense: 75, spAttack: 81, spDefense: 100, speed: 100 },
     39: { name: "プリン", emoji: "🎤", type1: "normal", type2: "fairy", hp: 115, attack: 45, defense: 20, spAttack: 45, spDefense: 25, speed: 20 },
+    40: { name: "プクリン", emoji: "🎤", type1: "normal", type2: "fairy", hp: 140, attack: 70, defense: 45, spAttack: 85, spDefense: 50, speed: 45 },
     50: { name: "ディグダ", emoji: "🕳️", type1: "ground", type2: null, hp: 10, attack: 55, defense: 25, spAttack: 35, spDefense: 45, speed: 95 },
     51: { name: "ダグトリオ", emoji: "🕳️", type1: "ground", type2: null, hp: 35, attack: 100, defense: 50, spAttack: 50, spDefense: 70, speed: 120 },
     58: { name: "ガーディ", emoji: "🐕", type1: "fire", type2: null, hp: 55, attack: 70, defense: 45, spAttack: 70, spDefense: 50, speed: 60 },
@@ -62,12 +69,15 @@ const POKEMON_DATA = {
     70: { name: "ウツドン", emoji: "🌿", type1: "grass", type2: "poison", hp: 65, attack: 90, defense: 50, spAttack: 85, spDefense: 45, speed: 55 },
     71: { name: "ウツボット", emoji: "🌿", type1: "grass", type2: "poison", hp: 80, attack: 105, defense: 65, spAttack: 100, spDefense: 70, speed: 70 },
     74: { name: "イシツブテ", emoji: "🪨", type1: "rock", type2: "ground", hp: 40, attack: 80, defense: 100, spAttack: 30, spDefense: 30, speed: 20 },
+    75: { name: "ゴローン", emoji: "🪨", type1: "rock", type2: "ground", hp: 55, attack: 95, defense: 115, spAttack: 45, spDefense: 45, speed: 35 },
+    76: { name: "ゴローニャ", emoji: "🪨", type1: "rock", type2: "ground", hp: 80, attack: 120, defense: 130, spAttack: 55, spDefense: 65, speed: 45 },
     77: { name: "ポニータ", emoji: "🐴", type1: "fire", type2: null, hp: 50, attack: 85, defense: 55, spAttack: 65, spDefense: 65, speed: 90 },
     78: { name: "ギャロップ", emoji: "🐴", type1: "fire", type2: null, hp: 65, attack: 100, defense: 70, spAttack: 80, spDefense: 80, speed: 105 },
     88: { name: "ベトベター", emoji: "💜", type1: "poison", type2: null, hp: 80, attack: 80, defense: 50, spAttack: 40, spDefense: 50, speed: 25 },
     89: { name: "ベトベトン", emoji: "💜", type1: "poison", type2: null, hp: 105, attack: 105, defense: 75, spAttack: 65, spDefense: 100, speed: 50 },
     95: { name: "イワーク", emoji: "🪨", type1: "rock", type2: "ground", hp: 35, attack: 45, defense: 160, spAttack: 30, spDefense: 45, speed: 70 },
     100: { name: "ビリリダマ", emoji: "⚡", type1: "electric", type2: null, hp: 40, attack: 30, defense: 50, spAttack: 55, spDefense: 55, speed: 100 },
+    101: { name: "マルマイン", emoji: "⚡", type1: "electric", type2: null, hp: 60, attack: 50, defense: 70, spAttack: 80, spDefense: 80, speed: 150 },
     109: { name: "ドガース", emoji: "💨", type1: "poison", type2: null, hp: 40, attack: 65, defense: 95, spAttack: 60, spDefense: 45, speed: 35 },
     110: { name: "マタドガス", emoji: "💨", type1: "poison", type2: null, hp: 65, attack: 90, defense: 120, spAttack: 85, spDefense: 70, speed: 60 },
     111: { name: "サイホーン", emoji: "🦏", type1: "ground", type2: "rock", hp: 80, attack: 85, defense: 95, spAttack: 30, spDefense: 30, speed: 25 },
@@ -114,8 +124,20 @@ const LEARNSETS = {
     100: { 1: ["たいあたり"], 9: "ソニックブーム", 17: "じばく" },
     109: { 1: ["どくガス", "たいあたり"], 9: "ヘドロこうげき" },
     110: { 1: ["どくガス", "たいあたり"], 9: "ヘドロこうげき" },
+    10: { 1: ["たいあたり", "いとをはく"], 9: "たいあたり" },
+    11: { 1: "かたくなる", 7: "かたくなる" },
+    12: { 1: "ねんりき", 10: "ねんりき", 12: "しびれごな", 15: "ねむりごな" },
+    18: { 1: "かぜおこし", 36: "つばさでうつ" },
+    20: { 1: "ひっさつまえば", 20: "ひっさつまえば" },
+    26: { 1: "10まんボルト" },
+    30: { 1: "ひっかく" }, 33: { 1: "つのつく" },
+    40: { 1: "うたう" },
+    75: { 1: "いわおとし" }, 76: { 1: "じしん" },
+    101: { 1: "10まんボルト" },
     120: { 1: ["たいあたり", "かたくなる"], 7: "みずでっぽう" },
     121: { 1: ["たいあたり", "みずでっぽう", "サイコキネシス"] },
+    133: { 1: ["たいあたり", "しっぽをふる"], 27: "でんこうせっか" },
+    135: { 1: ["でんきショック"], 31: "ミサイルばり" },
     "default": { 1: ["たいあたり"] }
 };
 
@@ -360,7 +382,26 @@ const EVOLUTIONS = {
     1: { level: 16, to: 2 }, 2: { level: 32, to: 3 },
     4: { level: 16, to: 5 }, 5: { level: 36, to: 6 },
     7: { level: 16, to: 8 }, 8: { level: 36, to: 9 },
-    16: { level: 18, to: 17 }
+    10: { level: 7, to: 11 }, 11: { level: 10, to: 12 },
+    16: { level: 18, to: 17 }, 17: { level: 36, to: 18 },
+    19: { level: 20, to: 20 },
+    25: { level: 15, to: 26 }, // Pikachu -> Raichu
+    29: { level: 16, to: 30 }, 30: { level: 30, to: 31 }, // NidoranF line
+    32: { level: 16, to: 33 }, 33: { level: 30, to: 34 }, // NidoranM line
+    37: { level: 20, to: 38 }, // Vulpix -> Ninetales
+    39: { level: 20, to: 40 }, // Jigglypuff -> Wigglytuff
+    50: { level: 26, to: 51 },
+    58: { level: 25, to: 59 }, // Growlithe -> Arcanine
+    63: { level: 16, to: 64 }, 64: { level: 35, to: 65 }, // Abra line
+    69: { level: 21, to: 70 }, 70: { level: 30, to: 71 }, // Bellsprout line
+    74: { level: 25, to: 75 }, 75: { level: 35, to: 76 }, // Geodude line
+    77: { level: 40, to: 78 },
+    88: { level: 38, to: 89 },
+    100: { level: 30, to: 101 },
+    109: { level: 35, to: 110 },
+    111: { level: 42, to: 112 },
+    120: { level: 25, to: 121 }, // Staryu -> Starmie
+    133: { level: 25, to: 135 } // Eevee -> Jolteon (Defaulting to one for now)
 };
 
 const MOVES = {
@@ -374,8 +415,14 @@ const MOVES = {
     "せいちょう": { type: "normal", category: "status", effect: { stat: "spAttack", amount: 1, statJP: "とくこう" } },
     "かぜおこし": { type: "normal", power: 40, category: "physical" },
     "すなかけ": { type: "normal", category: "status", effect: { stat: "accuracy", amount: -1, statJP: "めいちゅう" } },
+    "いとをはく": { type: "bug", category: "status", effect: { stat: "speed", amount: -1, statJP: "すばやさ" } },
+    "しびれごな": { type: "grass", category: "status", isParalyze: true },
+    "かたくなる": { type: "normal", category: "status", effect: { stat: "defense", amount: 1, statJP: "ぼうぎょ" } },
+    "まるくなる": { type: "normal", category: "status", effect: { stat: "defense", amount: 1, statJP: "ぼうぎょ" } },
     "でんこうせっか": { type: "normal", power: 40, category: "physical", priority: 1 },
     "ひっさつまえば": { type: "normal", power: 80, category: "physical" },
+    "つのつく": { type: "normal", power: 65, category: "physical" },
+    "じばく": { type: "normal", power: 200, category: "physical" },
     "はかいこうせん": { type: "normal", power: 150, category: "physical" },
 
     // Grass
@@ -406,6 +453,8 @@ const MOVES = {
     // Others
     "いわおとし": { type: "rock", power: 50, category: "physical" },
     "じしん": { type: "ground", power: 100, category: "physical" },
+    "ねんりき": { type: "psychic", power: 50, category: "special" },
+    "ミサイルばり": { type: "bug", power: 50, category: "physical" },
     "サイコキネシス": { type: "psychic", power: 90, category: "special" }
 };
 

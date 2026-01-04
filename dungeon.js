@@ -652,6 +652,22 @@ class Dungeon {
 }
 
 function getEnemyForFloor(floor) {
-    const pool = [16, 19, 10, 25]; // Simplified
+    let pool = [];
+    if (floor <= 2) {
+        // Grass Theme
+        pool = [1, 4, 7, 10, 16, 19, 25, 29, 32, 69]; // Starters + Common Forest
+    } else if (floor <= 4) {
+        // Cave Theme
+        pool = [25, 50, 74, 95, 100, 109, 111, 35, 39]; // + Clefairy(35 if added), Jigglypuff(39)
+        // Filter out IDs not in POKEMON_DATA if I'm not sure, but I checked most.
+        // 35 Clefairy not added. 39 Jigglypuff is in.
+        pool = [25, 50, 74, 95, 100, 109, 111, 39, 29, 32];
+    } else if (floor <= 6) {
+        // Volcano Theme
+        pool = [4, 37, 58, 77, 74, 95, 111, 63]; // Fire types + Rock + Abra
+    } else {
+        // Sea Theme (7, 8, 9)
+        pool = [7, 120, 121, 88, 122, 16, 19]; // Water + Grimer + Mr. Mime?
+    }
     return pool[Math.floor(Math.random() * pool.length)];
 }
