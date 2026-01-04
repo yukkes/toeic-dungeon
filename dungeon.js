@@ -162,7 +162,7 @@ class Dungeon {
         this.gatekeeper = {
             x: this.stairsX,
             y: this.stairsY,
-            id: 149, // Dragonite
+            id: getRandomFinalEvolution(),
             isBoss: true
         };
         // Remove normal enemy if generated there
@@ -359,9 +359,8 @@ class Dungeon {
 
         let enemy;
         if (enemyEntity.isBoss) {
-            // "先頭ポケモンのレベル + 3"
-            const pLv = this.game.playerPokemon.level;
-            enemy = new Pokemon(enemyEntity.id, pLv + 3);
+            const maxLv = Math.max(...this.game.party.map(p => p.level));
+            enemy = new Pokemon(enemyEntity.id, maxLv);
             enemy.name = "番人 " + enemy.name;
         } else {
             const floorBase = 3 + (this.floor * 3);
@@ -649,6 +648,17 @@ class Dungeon {
         ctx.shadowBlur = 0; // Reset
         ctx.restore();
     }
+}
+
+function getRandomFinalEvolution() {
+    const allIds = Object.keys(POKEMON_DATA).map(Number).filter(id => id < 153); // Filter out trainers (Gym Leaders start at 153)
+    const evolutionSources = Object.keys(EVOLUTIONS).map(Number);
+    // Elements in allIds that are NOT in evolutionSources keys are final evolutions (or single stage)
+    const finalEvolutions = allIds.filter(id => !evolutionSources.includes(id));
+
+    // Select one randomly
+    if (finalEvolutions.length === 0) return 149; // Fallback to Dragonite
+    return finalEvolutions[Math.floor(Math.random() * finalEvolutions.length)];
 }
 
 function getEnemyForFloor(floor) {
