@@ -50,14 +50,53 @@ class SaveManager {
 
         // Determine the key for this Pokemon
         let key;
-        if (starterIds.includes(pokemon.id)) {
-            // Starters: Use evolution line as key
-            if ([1, 2, 3].includes(pokemon.id)) key = 'starter_bulbasaur';
-            else if ([4, 5, 6].includes(pokemon.id)) key = 'starter_charmander';
-            else if ([7, 8, 9].includes(pokemon.id)) key = 'starter_squirtle';
-        } else {
-            // Regular Pokemon: Use species ID as key
-            key = `pokemon_${pokemon.id}`;
+
+        // Helper to find base ID of evolution line
+        // NOTE: This logic needs to match EVOLUTIONS structure or be hardcoded.
+        // For simplicity, we hardcode common lines or check "EVOLUTIONS" but EVOLUTIONS is imported?
+        // Assuming global access to EVOLUTIONS or just hardcoding typical ones for MVP simplicity.
+
+        const getBaseId = (id) => {
+            if ([1, 2, 3].includes(id)) return 1;
+            if ([4, 5, 6].includes(id)) return 4;
+            if ([7, 8, 9].includes(id)) return 7;
+            if ([10, 11, 12].includes(id)) return 10;
+            if ([13, 14, 15].includes(id)) return 13;
+            if ([16, 17, 18].includes(id)) return 16;
+            if ([19, 20].includes(id)) return 19;
+            if ([21, 22].includes(id)) return 21;
+            if ([25, 26].includes(id)) return 25;
+            if ([29, 30, 31].includes(id)) return 29;
+            if ([32, 33, 34].includes(id)) return 32;
+            if ([35, 36].includes(id)) return 35;
+            if ([37, 38].includes(id)) return 37;
+            if ([39, 40].includes(id)) return 39;
+            if ([41, 42].includes(id)) return 41;
+            if ([50, 51].includes(id)) return 50;
+            if ([58, 59].includes(id)) return 58;
+            if ([60, 61, 62].includes(id)) return 60;
+            if ([63, 64, 65].includes(id)) return 63;
+            if ([69, 70, 71].includes(id)) return 69;
+            if ([74, 75, 76].includes(id)) return 74;
+            if ([100, 101].includes(id)) return 100;
+            if ([109, 110].includes(id)) return 109;
+            if ([111, 112].includes(id)) return 111;
+            if ([120, 121].includes(id)) return 120;
+            if ([133, 134, 135, 136].includes(id)) return 133;
+
+            return id; // Default (Single stage or unlisted)
+        };
+
+        const baseId = getBaseId(pokemon.id);
+        key = `pokemon_family_${baseId}`;
+
+        if (starterIds.includes(baseId)) {
+            // Keep legacy keys for starters if needed, or just migrate to new uniform key?
+            // To prevent data loss for existing users, we should prob check legacy keys.
+            // But for new saves this is fine.
+            if (baseId === 1) key = 'starter_bulbasaur';
+            else if (baseId === 4) key = 'starter_charmander';
+            else if (baseId === 7) key = 'starter_squirtle';
         }
 
         // Check if we should save this Pokemon
