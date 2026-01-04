@@ -3,7 +3,7 @@
 class SpriteLoader {
     constructor() {
         this.spriteSheet = document.getElementById('sprite-sheet');
-        this.spriteSize = 128;
+        this.spriteSize = 96;
         this.columns = 4;
         this.loaded = false;
 
