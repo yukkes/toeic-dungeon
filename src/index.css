@@ -8,9 +8,11 @@
 
 * {
     -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
     user-select: none;
+}
+
+html {
+    overflow: hidden;
 }
 
 body {
@@ -24,6 +26,7 @@ body {
     align-items: center;
     height: 100vh;
     overflow: hidden;
+    overflow-x: hidden;
     touch-action: manipulation;
 }
 
@@ -36,6 +39,7 @@ body {
     max-width: 100%;
     max-height: 100%;
     overflow: hidden;
+    overflow-x: hidden;
 }
 
 .screen {
@@ -45,6 +49,7 @@ body {
     flex-direction: column;
     align-items: center;
     overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
 }
 
@@ -56,6 +61,7 @@ body {
 #title-screen {
     justify-content: center;
     background: linear-gradient(135deg, #2b32b2 0%, #1488cc 100%);
+    overflow-x: hidden;
 }
 
 .game-title {
@@ -117,10 +123,13 @@ body {
 }
 
 /* Starter Selection */
+#starter-selection {
+    overflow-x: hidden;
+}
+
 .starter-container {
     display: flex;
-    gap: 20px;
-    margin-top: 40px;
+    margin-top: 20px;
 }
 
 .starter-card {
@@ -170,6 +179,10 @@ body {
 }
 
 /* Box / Party Select Screen */
+#party-select-screen {
+    overflow-x: hidden;
+}
+
 .party-layout {
     display: flex;
     width: 100%;
@@ -265,16 +278,17 @@ body {
 /* Dungeon Screen */
 #dungeon-screen {
     position: relative;
+    overflow-x: hidden;
 }
 
 .status-bar {
     width: 100%;
-    height: 60px;
+    height: 80px;
     background: #333;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 20px;
+    padding: 0 6px;
     box-sizing: border-box;
     border-bottom: 2px solid #555;
 }
@@ -282,14 +296,13 @@ body {
 .player-status {
     display: flex;
     align-items: center;
-    gap: 10px;
 }
 
 .mini-sprite {
-    width: 48px;
-    height: 48px;
-    background: #444;
+    width: 64px;
+    height: 64px;
     image-rendering: pixelated;
+    transform-origin: center;
 }
 
 .hp-bar-sm {
@@ -328,11 +341,16 @@ canvas#dungeon-canvas {
 }
 
 /* Battle Screen */
+#battle-screen {
+    overflow-x: hidden;
+}
+
 .battle-scene {
     height: 50%;
     width: 100%;
     position: relative;
     background: linear-gradient(to bottom, #80d0d0 0%, #80d0d0 50%, #50a040 50%, #50a040 100%);
+    overflow-x: hidden;
 }
 
 .enemy-area {
@@ -376,7 +394,7 @@ canvas#dungeon-canvas {
 }
 
 .player-area .sprite-area canvas {
-    transform: scaleX(-1);
+    transform: scaleX(-1) scale(0.8);
 }
 
 .enemy-area .sprite-area canvas {
@@ -441,6 +459,7 @@ canvas#dungeon-canvas {
     border-top: 4px solid #444;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
 }
 
 .message-box {
@@ -466,6 +485,7 @@ canvas#dungeon-canvas {
     gap: 4px;
     justify-content: center;
     border-left: 2px solid #333;
+    flex-shrink: 0;
 }
 
 .cmd-btn {
@@ -522,11 +542,13 @@ canvas#dungeon-canvas {
 }
 
 .choice-btn.correct {
-    background: #2e7d32;
+    background: #2e7d32 !important;
+    border-color: #1b5e20 !important;
 }
 
 .choice-btn.wrong {
-    background: #c62828;
+    background: #c62828 !important;
+    border-color: #b71c1c !important;
 }
 
 .move-area {
@@ -626,15 +648,15 @@ canvas#dungeon-canvas {
 }
 
 .pad-btn {
-    width: 60px;
-    height: 60px;
-    background: rgba(255, 255, 255, 0.2);
+    width: 30px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.5);
     border: 1px solid white;
     color: white;
     border-radius: 5px;
     cursor: pointer;
     touch-action: manipulation;
-    font-size: 24px;
+    font-size: 12px;
 }
 
 /* Gym Leader Progress Screen */
@@ -643,6 +665,7 @@ canvas#dungeon-canvas {
     box-sizing: border-box;
     justify-content: flex-start;
     gap: 20px;
+    overflow-x: hidden;
 }
 
 .gym-leaders-grid {
