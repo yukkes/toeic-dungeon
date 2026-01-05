@@ -5,7 +5,7 @@
 
 - プレイスタイル: **ダンジョン探索 / ジムバトル / 育成**
 - 対象: TOEIC 初〜中級学習者（基礎語彙〜頻出表現）
-- 実装: **HTML / CSS / バニラ JavaScript**
+- 実装: **SolidJS / TypeScript / Vite**
 - 配信: **GitHub Pages** で静的ホスティング
 
 ---
@@ -33,7 +33,7 @@ https://yukkes.github.io/toeic-dungeon/
 
 ### タイトル画面
 
-`index.html` のタイトル画面から、以下のモードを選択できます。
+タイトル画面から、以下のモードを選択できます。
 
 - **育成モード (Training)**
   - ダンジョンを探索しながらバトル＆TOEIC 問題に回答
@@ -49,8 +49,6 @@ https://yukkes.github.io/toeic-dungeon/
 
 ## ゲームモードとサイクル
 
-（詳細は [`specification.md`](./specification.md) を参照）
-
 ### 共通: ポケモンボックス
 
 - 4×4 の **16 マス（最大 16 匹）** まで保存可能
@@ -60,10 +58,11 @@ https://yukkes.github.io/toeic-dungeon/
 ### 育成モード (Training Mode)
 
 - **敵レベル補正**  
-  `Max(FloorBaseLevel, PlayerLevel - 2)` を用いて、プレイヤーのレベルに応じて敵レベルが自動調整されます
+  `Min(FloorBaseLevel, PlayerLevel - 1)` が適用されます。  
+  基本的に敵はプレイヤーより少し弱い（-1 レベル）状態になり、サクサク進めるよう調整されています。
 - **9 階層目の番人 (Gatekeeper)**
   - 9F のゴールには「番人ポケモン」が立ちはだかります
-  - レベルは **先頭ポケモンのレベル + 3**
+  - レベルは **プレイヤーと同レベル**（ただし最低 Lv.5）
   - 番人を倒さないとクリア（帰還）できません
 
 ### ジムバトルモード (Gym Battle Mode)
@@ -79,9 +78,9 @@ https://yukkes.github.io/toeic-dungeon/
 
 ## TOEIC 学習要素
 
-- TOEIC 形式の問題データは [`toeic-questions.js`](./toeic-questions.js) にまとまっています
+- TOEIC 形式の問題データは `src/data/toeic-questions.ts` などに管理されています
 - 単語・熟語・短い文の理解を問う問題を、**バトル中やイベント中に解いていく** ことで経験値や報酬が変化する設計です
-- 階層ごとに目安となる TOEIC レベルが設定されており、進むほど難易度も上がります（詳細仕様は一部 `specification.md` に記載）
+- 階層ごとに目安となる TOEIC レベルが設定されており、進むほど難易度も上がります
 
 ---
 
@@ -89,41 +88,24 @@ https://yukkes.github.io/toeic-dungeon/
 
 ### 全体アーキテクチャ
 
-- 純粋な **静的サイト構成**（HTML + CSS + バニラ JS）
-- GitHub Pages で `main` ブランチのルートをそのまま公開
-- SPA（Single Page Application）に近い構成で、画面は `div.screen` の表示切り替えで実現
+- **SolidJS + TypeScript + Vite** によるモダンなフロントエンド構成
+- コンポーネント指向アーキテクチャによる UI 分割
+- Solid Store (`createStore`) を用いたリアクティブなグローバル状態管理
 - ロジックは大まかに以下の役割で分割されています
 
-| ファイル                | 役割概要                                                                 |
-| ----------------------- | ------------------------------------------------------------------------ |
-| `index.html`           | エントリーポイント、画面コンテナ、ボタンや Canvas の定義                |
-| `styles.css`           | UI スタイル（8-bit 風レイアウト、ボタン、ダイアログなど）                |
-| `game.js`              | グローバルなゲーム状態・画面遷移・モード管理                            |
-| `dungeon.js`           | ダンジョン階層・マップ・プレイヤー移動ロジック                          |
-| `battle.js`            | バトルシーケンス・ターン進行・ダメージ計算・問題出題                     |
-| `pokemon.js`           | ポケモンの種族値・タイプ・技などのデータと振る舞い                      |
-| `toeic-questions.js`   | TOEIC 問題データセット                                                   |
-| `save-manager.js`      | セーブ／ロード処理（`localStorage`）                                    |
-| `sprite-loader.js`     | スプライトシート（`poke.png`）の読み込み & Canvas 描画ユーティリティ     |
-| `debug_splite.html`    | スプライト配置確認用のデバッグ HTML                                     |
-| `specification.md`     | 仕様書（ゲームモード・バトル計算・UI 要件など）                          |
-| `LICENSE`              | MIT ライセンス                                                            |
+| パス | 役割概要 |
+| --- | --- |
+| `src/App.tsx` | アプリケーションのエントリーポイント、画面ルーティング的な制御 |
+| `src/store.ts` | グローバルなゲーム状態（Mode, Player, Party etc.）の管理 |
+| `src/components/` | 各画面（Title, Battle, Dungeon, PartySelect）の UI コンポーネント |
+| `src/game/` | ゲームコアロジック (Dungeon, BattleLogic, SaveManager etc.) |
+| `src/data/` | ポケモンデータ、アイテム、TOEIC 問題などの JSON データ |
+| `src/utils/` | 汎用ユーティリティ関数 |
 
 ### GitHub Pages によるホスティング
 
-- このリポジトリは **GitHub Pages でそのまま公開可能** な構成になっています
-- 想定設定:
-  - Pages ソース: `main` ブランチ / ルート (`/`)
-  - ビルドステップなし（静的ファイルのみ）
-- デプロイフローの例:
-  1. `main` に push / merge
-  2. GitHub Pages が自動的に更新
-  3. `https://yukkes.github.io/toeic-dungeon/` からアクセス可能
-
-ビルドや依存パッケージが一切ないため CI は任意ですが、以下のようなチェックを追加する余地があります。
-
-- `npm` / `pnpm` / `yarn` を導入して Lint 用の devDependency を導入し、GitHub Actions で実行
-- HTML / CSS / JS のフォーマットチェック
+- GitHub Actions (`.github/workflows/deploy.yml`) により、`main` ブランチへの push 時に自動ビルド & デプロイされます
+- ビルド成果物は `gh-pages` ブランチに配置されます
 
 ---
 
@@ -131,47 +113,30 @@ https://yukkes.github.io/toeic-dungeon/
 
 ### 画面管理
 
-- 各画面は `index.html` 内の `div.screen` として定義され、CSS クラス `active` の付け外しで表示を切り替えます
-  - 例: `#title-screen`, `#starter-screen`, `#dungeon-screen`, `#battle-screen` など
-- 遷移制御は主に `game.js` で行われている想定です（イベントリスナーでボタン押下を検知し、状態遷移）
+- `src/App.tsx` 内で `gameState.mode` に応じて表示するコンポーネントを切り替えています
+  - 例: `<TitleScreen />`, `<DungeonScreen />`, `<BattleScreen />` など
+- 状態遷移は `src/store.ts` の `setGameState` や各コンポーネント内のアクションによってトリガーされます
 
 ### ダンジョンロジック
 
-- `dungeon.js` がフロア・階層・ランダムエンカウントなどを管理
-- 階層ごとに TOEIC レベルを設定し、出題問題のレベル帯や敵レベル補正もここから参照する設計になっています
+- `src/game/Dungeon.ts` がフロア生成・エンカウント判定などを担当
+- SolidJS のリアクティブシステムにより、プレイヤー位置やマップの状態変更が即座に UI に反映されます
 
 ### バトル・ステータス計算
 
-- `battle.js` は以下のような責務を持つ想定です
-  - プレイヤー側・敵側ポケモンの行動選択
-  - 技の命中判定・ダメージ計算
-  - ターン制の制御（行動順、状態異常、勝敗判定）
-  - TOEIC 問題とのブリッジ（正解／不正解でダメージ倍率や報酬を変化させるなど）
-- `specification.md` より:
-  - 初代ポケモン準拠のタイプ相性・急所計算
-  - 急所率: 素早さ依存  
-    $$P = \frac{BaseSpeed}{512}$$
+- `src/game/BattleLogic.ts` が担当
+  - ターン進行、ダメージ計算、TOEIC 問題の出題タイミング制御
+  - `signal` や `store` を通じてバトルログや HP 表示を更新
 
 ### データ層
 
-- `pokemon.js`
-  - 種族値、タイプ、レベルアップによる習得技などをハードコード
-  - 最大 4 つまでの技を持ち、レベルアップ時に新技を覚える（入れ替えが必要）
-- `toeic-questions.js`
-  - JS オブジェクトとして大量の問題データを持つ（ファイルサイズが比較的大きい）
-  - 出題側は `battle.js` / `dungeon.js` / `game.js` などから呼び出す
+- `src/data/pokemon.json`: ポケモンの種族値、技データ定義
+- `src/data/toeic-questions.json`: TOEIC 問題データセット
 
 ### セーブデータ
 
-- `save-manager.js` によって、`localStorage` を用いたセーブ／ロードを実装
-  - 例: 手持ちポケモン、ボックス、所持アイテム、現在の階層などをシリアライズ
-  - Pages 上でもそのまま動作するよう、サーバサイドを不要にしているのがポイントです
-
-### スプライト描画
-
-- `sprite-loader.js` + `poke.png`
-  - 1 枚のスプライトシートから、Canvas に対して指定座標のキャラを描画
-  - `debug_splite.html` はスプライトの切り出し位置・サイズを調整するためのデバッグ用ページ
+- `src/game/SaveManager.ts` にて `localStorage` への永続化を実装
+- JSON 形式でシリアライズして保存
 
 ---
 
@@ -179,62 +144,52 @@ https://yukkes.github.io/toeic-dungeon/
 
 ### 必要なもの
 
-- 任意のモダンブラウザ（Chrome / Firefox / Edge / Safari 等）
-- 任意の HTTP サーバ（セキュリティ制約の関係で、`file://` では動作が不安定なブラウザがあるため）
+- Node.js (v24 以上推奨)
+- npm / yarn / pnpm などのパッケージマネージャ
 
 ### セットアップ & 起動
 
 ```bash
+# リポジトリをクローン
 git clone https://github.com/yukkes/toeic-dungeon.git
 cd toeic-dungeon
 
-# 1. 簡易 HTTP サーバを起動（例: Python）
-python -m http.server 8000
+# 依存パッケージのインストール
+npm install
 
-# 2. ブラウザでアクセス
-# http://localhost:8000/index.html
+# 開発サーバの起動
+npm run dev
 ```
 
-Node.js ベースの開発環境を整える場合は、任意で以下のようにしても構いません。
+ブラウザで `http://localhost:5173` (Vite のデフォルト) にアクセスして動作確認できます。
+
+### ビルド
 
 ```bash
-# 任意: 開発用のツールチェーンを導入する場合の例（あくまで一例）
-npm init -y
-npm install --save-dev eslint prettier live-server
-
-# 一時的にローカルサーバを立ち上げる
-npx live-server .
+npm run build
 ```
+
+`dist` ディレクトリに静的ファイルが出力されます。
 
 ---
 
 ## 拡張・改修アイデア（技術者向け）
 
-`specification.md` に基づき、今後想定されるタスクやリファクタリングの方向性です。
-
 ### 機能面
 
-- [ ] **パーティ編成 UI**  
-      ボックス（最大 16 匹）からジム挑戦用の 6 匹を選ぶための専用画面／コンポーネント
-- [ ] **TOEIC 問題のタグ付け・難易度管理**  
-      Part / 単語レベル / 品詞などのメタデータでフィルタリング可能に
-- [ ] **学習ログ機能**  
-      正答率・苦手問題一覧・復習モードなどを実装
-- [ ] **レスポンシブ最適化**  
-      スマホでの操作（フリックよりもボタン UI 前提）を前提にレイアウト・フォントサイズを調整
+- [ ] **パーティ編成 UI の改善**
+      ドラッグ&ドロップでの入れ替えや、より詳細なステータス確認
+- [ ] **TOEIC 問題の拡充**
+      外部 API からの取得や、カテゴリ分けの強化
+- [ ] **アニメーション強化**
+      Solid Transition や CSS アニメーションを用いたリッチな演出
 
 ### コード構造・品質
 
-- [ ] ES Modules 化（`<script type="module">`）とファイル分割の明確化
-- [ ] クラスベースまたは関数型での責務整理（`Game`, `Dungeon`, `Battle`, `PokemonParty` など）
-- [ ] Lint / Format 導入（ESLint / Prettier）
-- [ ] 型安全性向上（JSDoc コメント、あるいは TypeScript 化）
-
-### テスト
-
-- [ ] 主要ロジック（ダメージ計算、レベルアップ、問題選択ロジックなど）のユニットテスト導入
-- [ ] GitHub Actions での自動テスト + Lint 実行
-- [ ] E2E テスト（Playwright / Cypress 等）の導入（任意）
+- [x] **TypeScript 化** (完了)
+- [x] **コンポーネント分割** (SolidJS 化完了)
+- [ ] **テスト導入**
+      Vitest 等を用いたユニットテスト、ロジックの検証
 
 ---
 
