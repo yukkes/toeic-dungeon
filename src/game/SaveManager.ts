@@ -1,21 +1,20 @@
-// Save Manager - LocalStorage persistence for Box/Gym
-// Switch to localStorage to persist across browser sessions for Box Features
 
-class SaveManager {
-    constructor() {
-        this.saveKey = 'moemon_toeic_v1';
-        this.boxKey = 'moemon_box_v1';
-    }
+import { Pokemon } from '../game/Pokemon';
+import POKEMON_DATA_JSON from '../data/pokemon.json';
+import { PokemonDef } from '../types';
+
+const POKEMON_DATA: Record<string, PokemonDef> = POKEMON_DATA_JSON as any;
+
+export class SaveManager {
+    saveKey = 'moemon_toeic_v1';
+    boxKey = 'moemon_box_v1';
 
     // --- Box Management (Long-term Persistence) ---
-    getBox() {
+    getBox(): any[] {
         try {
             const data = localStorage.getItem(this.boxKey);
             if (!data) return [];
-
-            // Data is stored as Map object {id: pokemonData}
             const boxMap = JSON.parse(data);
-            // Convert to array for compatibility
             return Object.values(boxMap);
         } catch (e) {
             console.error(e);
@@ -23,9 +22,8 @@ class SaveManager {
         }
     }
 
-    saveToBox(pokemon) {
-        // Load box as Map
-        let boxMap = {};
+    saveToBox(pokemon: Pokemon): boolean {
+        let boxMap: Record<string, any> = {};
         try {
             const data = localStorage.getItem(this.boxKey);
             if (data) {
@@ -37,7 +35,6 @@ class SaveManager {
 
         const starterIds = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-        // Prepare data object
         const pData = {
             id: pokemon.id,
             level: pokemon.level,
@@ -48,15 +45,7 @@ class SaveManager {
             timestamp: Date.now()
         };
 
-        // Determine the key for this Pokemon
-        let key;
-
-        // Helper to find base ID of evolution line
-        // NOTE: This logic needs to match EVOLUTIONS structure or be hardcoded.
-        // For simplicity, we hardcode common lines or check "EVOLUTIONS" but EVOLUTIONS is imported?
-        // Assuming global access to EVOLUTIONS or just hardcoding typical ones for MVP simplicity.
-
-        const getBaseId = (id) => {
+        const getBaseId = (id: number): number => {
             if ([1, 2, 3].includes(id)) return 1;
             if ([4, 5, 6].includes(id)) return 4;
             if ([7, 8, 9].includes(id)) return 7;
@@ -83,36 +72,29 @@ class SaveManager {
             if ([111, 112].includes(id)) return 111;
             if ([120, 121].includes(id)) return 120;
             if ([133, 134, 135, 136].includes(id)) return 133;
-
-            return id; // Default (Single stage or unlisted)
+            return id;
         };
 
         const baseId = getBaseId(pokemon.id);
-        key = `pokemon_family_${baseId}`;
+        let key = `pokemon_family_${baseId}`;
 
         if (starterIds.includes(baseId)) {
-            // Keep legacy keys for starters if needed, or just migrate to new uniform key?
-            // To prevent data loss for existing users, we should prob check legacy keys.
-            // But for new saves this is fine.
             if (baseId === 1) key = 'starter_bulbasaur';
             else if (baseId === 4) key = 'starter_charmander';
             else if (baseId === 7) key = 'starter_squirtle';
         }
 
-        // Check if we should save this Pokemon
         const existing = boxMap[key];
         if (existing) {
-            // Only save if new level is higher
             if (pokemon.level > existing.level) {
-                console.log(`Updating ${POKEMON_DATA[pokemon.id].name} in box with higher level (${existing.level} -> ${pokemon.level})`);
+                console.log(`Updating ${POKEMON_DATA[String(pokemon.id)]?.name} in box with higher level (${existing.level} -> ${pokemon.level})`);
                 boxMap[key] = pData;
             } else {
-                console.log(`${POKEMON_DATA[pokemon.id].name} already in box with equal or higher level (${existing.level}), skipping...`);
-                return true; // Don't save lower level
+                console.log(`${POKEMON_DATA[String(pokemon.id)]?.name} already in box with equal or higher level (${existing.level}), skipping...`);
+                return true;
             }
         } else {
-            // New Pokemon
-            console.log(`Adding ${POKEMON_DATA[pokemon.id].name} Lv.${pokemon.level} to box`);
+            console.log(`Adding ${POKEMON_DATA[String(pokemon.id)]?.name} Lv.${pokemon.level} to box`);
             boxMap[key] = pData;
         }
 
@@ -121,7 +103,11 @@ class SaveManager {
     }
 
     // --- Dungeon Run State (Short-term Persistence) ---
-    saveRun(gameState) {
+    // Note: Reusing generic gameState object or specific interface?
+    // In Solid port, we might store this differently or just assume simple object.
+    saveRun(gameState: any) {
+        if (!gameState.playerPokemon) return;
+
         const data = {
             player: {
                 id: gameState.playerPokemon.id,
@@ -131,8 +117,8 @@ class SaveManager {
                 moves: gameState.playerPokemon.moves
             },
             floor: gameState.currentFloor,
-            stats: gameState.stats,
-            party: gameState.party.map(p => ({
+            items: gameState.items, // Original had stats? 'items' is likely what we want
+            party: (gameState.party || []).map((p: Pokemon) => ({
                 id: p.id,
                 level: p.level,
                 hp: p.hp,
@@ -143,24 +129,24 @@ class SaveManager {
         sessionStorage.setItem(this.saveKey, JSON.stringify(data));
     }
 
-    loadRun() {
+    loadRun(): any | null {
         const data = sessionStorage.getItem(this.saveKey);
         if (!data) return null;
         const json = JSON.parse(data);
 
         // Rehydrate
         const player = this.rehydrate(json.player);
-        const party = (json.party || []).map(p => this.rehydrate(p));
+        const party = (json.party || []).map((p: any) => this.rehydrate(p));
 
         return {
             playerPokemon: player,
             currentFloor: json.floor,
-            stats: json.stats,
+            items: json.items,
             party: party
         };
     }
 
-    rehydrate(data) {
+    rehydrate(data: any): Pokemon {
         const p = new Pokemon(data.id, data.level);
         p.hp = data.hp;
         p.exp = data.exp;
@@ -168,7 +154,7 @@ class SaveManager {
         return p;
     }
 
-    hasRunData() {
+    hasRunData(): boolean {
         return !!sessionStorage.getItem(this.saveKey);
     }
 
@@ -177,11 +163,8 @@ class SaveManager {
     }
 
     clearAllData() {
-        // Clear box
         localStorage.removeItem(this.boxKey);
-        // Clear gym progress
         localStorage.removeItem('gymProgress');
-        // Clear session data
         sessionStorage.removeItem(this.saveKey);
         console.log('All save data cleared');
     }

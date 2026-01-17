@@ -1,0 +1,236 @@
+{
+  "たいあたり": {
+    "type": "normal",
+    "power": 40,
+    "category": "physical"
+  },
+  "ひっかく": {
+    "type": "normal",
+    "power": 40,
+    "category": "physical"
+  },
+  "はたく": {
+    "type": "normal",
+    "power": 40,
+    "category": "physical"
+  },
+  "なきごえ": {
+    "type": "normal",
+    "category": "status",
+    "effect": {
+      "stat": "attack",
+      "amount": -1,
+      "statJP": "こうげき"
+    }
+  },
+  "しっぽをふる": {
+    "type": "normal",
+    "category": "status",
+    "effect": {
+      "stat": "defense",
+      "amount": -1,
+      "statJP": "ぼうぎょ"
+    }
+  },
+  "にらみつける": {
+    "type": "normal",
+    "category": "status",
+    "effect": {
+      "stat": "defense",
+      "amount": -1,
+      "statJP": "ぼうぎょ"
+    }
+  },
+  "せいちょう": {
+    "type": "normal",
+    "category": "status",
+    "effect": {
+      "stat": "spAttack",
+      "amount": 1,
+      "statJP": "とくこう"
+    }
+  },
+  "かぜおこし": {
+    "type": "normal",
+    "power": 40,
+    "category": "physical"
+  },
+  "すなかけ": {
+    "type": "normal",
+    "category": "status",
+    "effect": {
+      "stat": "accuracy",
+      "amount": -1,
+      "statJP": "めいちゅう"
+    }
+  },
+  "いとをはく": {
+    "type": "bug",
+    "category": "status",
+    "effect": {
+      "stat": "speed",
+      "amount": -1,
+      "statJP": "すばやさ"
+    }
+  },
+  "しびれごな": {
+    "type": "grass",
+    "category": "status",
+    "isParalyze": true
+  },
+  "かたくなる": {
+    "type": "normal",
+    "category": "status",
+    "effect": {
+      "stat": "defense",
+      "amount": 1,
+      "statJP": "ぼうぎょ"
+    }
+  },
+  "まるくなる": {
+    "type": "normal",
+    "category": "status",
+    "effect": {
+      "stat": "defense",
+      "amount": 1,
+      "statJP": "ぼうぎょ"
+    }
+  },
+  "でんこうせっか": {
+    "type": "normal",
+    "power": 40,
+    "category": "physical",
+    "priority": 1
+  },
+  "ひっさつまえば": {
+    "type": "normal",
+    "power": 80,
+    "category": "physical"
+  },
+  "つのつく": {
+    "type": "normal",
+    "power": 65,
+    "category": "physical"
+  },
+  "じばく": {
+    "type": "normal",
+    "power": 200,
+    "category": "physical"
+  },
+  "はかいこうせん": {
+    "type": "normal",
+    "power": 150,
+    "category": "physical"
+  },
+  "つるのムチ": {
+    "type": "grass",
+    "power": 45,
+    "category": "physical"
+  },
+  "はっぱカッター": {
+    "type": "grass",
+    "power": 55,
+    "category": "physical",
+    "highCrit": true
+  },
+  "ソーラービーム": {
+    "type": "grass",
+    "power": 120,
+    "category": "special"
+  },
+  "やどりぎのタネ": {
+    "type": "grass",
+    "category": "status",
+    "isLeechSeed": true
+  },
+  "ひのこ": {
+    "type": "fire",
+    "power": 40,
+    "category": "special"
+  },
+  "かえんほうしゃ": {
+    "type": "fire",
+    "power": 90,
+    "category": "special"
+  },
+  "だいもんじ": {
+    "type": "fire",
+    "power": 110,
+    "category": "special"
+  },
+  "つばさでうつ": {
+    "type": "flying",
+    "power": 35,
+    "category": "physical"
+  },
+  "あわ": {
+    "type": "water",
+    "power": 20,
+    "category": "special"
+  },
+  "みずでっぽう": {
+    "type": "water",
+    "power": 40,
+    "category": "special"
+  },
+  "バブルこうせん": {
+    "type": "water",
+    "power": 65,
+    "category": "special"
+  },
+  "ハイドロポンプ": {
+    "type": "water",
+    "power": 110,
+    "category": "special"
+  },
+  "ロケットずつき": {
+    "type": "normal",
+    "power": 100,
+    "category": "physical"
+  },
+  "かみつく": {
+    "type": "normal",
+    "power": 60,
+    "category": "physical"
+  },
+  "でんきショック": {
+    "type": "electric",
+    "power": 40,
+    "category": "special"
+  },
+  "10まんボルト": {
+    "type": "electric",
+    "power": 90,
+    "category": "special"
+  },
+  "でんじは": {
+    "type": "electric",
+    "category": "status",
+    "isParalyze": true
+  },
+  "いわおとし": {
+    "type": "rock",
+    "power": 50,
+    "category": "physical"
+  },
+  "じしん": {
+    "type": "ground",
+    "power": 100,
+    "category": "physical"
+  },
+  "ねんりき": {
+    "type": "psychic",
+    "power": 50,
+    "category": "special"
+  },
+  "ミサイルばり": {
+    "type": "bug",
+    "power": 50,
+    "category": "physical"
+  },
+  "サイコキネシス": {
+    "type": "psychic",
+    "power": 90,
+    "category": "special"
+  }
+}
